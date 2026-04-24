@@ -71,13 +71,38 @@ Every addressable unit in any system — a CSV column, a system prompt workflow 
 
 Same four facets everywhere. That uniformity is the geometry. Once it's in place, the invisible becomes addressable with a URL. Before we can do anything, we need to be able to measure it. Without a shared geometry, there's no shared "perspective lines" to make comparisons at all.
 
+
+### Facet Storage Is Columnar
+
+Each facet is a struct of arrays: column names at the top level, parallel 
+arrays as values.
+
+    "/structure": {
+      "constraint-key":   ["kind",   "format"],
+      "constraint-value": ["system", "csv"]
+    }
+
+Row N of the facet is element N of every column. **Invariant:** all arrays 
+inside one facet have equal length.
+
+An empty facet declares its schema with empty arrays:
+
+    "/context": { "timestamp": [], "channel": [], "key": [], "value": [] }
+
+Append a row by pushing one element onto every column in lockstep. The 
+runtime's `appendContext` helper enforces the invariant; direct mutation 
+outside the helper is a bug.
+
+
 ## Step 2 — Score Dark Uncertainty in Real-Time (δ → "Dark Fraction Score")
+
+From a philosophical perspective, the geometry and the protocol are identical, and Unicode expression of math as the highest abstraction and precision layer is canonical.
 
 With shared geometry, we can compute dark fraction:
 
-$$\delta = 1 - \frac{|B_r|}{2^n}$$
-
-<p align="center"><em>δ = 1 − |B<sub>r</sub>| / 2<sup>n</sup></em></p>
+<p align="center">
+δ = 1 − |Bᵣ| / 2ⁿ
+</p>
 
 Data is part of the Shannon "message" — the communicated information in a transmission event. Its presence is what brings the spike into existence; a spike that isn't attached to the observatron's surface doesn't exist. Each spike is still a full tetrahedron geometrically, with Data as the base anchoring it to the node and Meaning, Structure, and Context rising as the three elevated faces. Uncertainty can only accumulate along those three elevated dimensions.
 
@@ -274,10 +299,7 @@ The other three facets have no row limit. `/meaning` can carry many
 symbol→meaning pairs about the anchor. `/structure` can stack 
 constraints. `/context` grows as events accumulate. Only `/data` is 
 pinned to one row, because only `/data` answers *which thing are we 
-talking about*. See *Structural Compression → Compression 3* for why 
-this is the same fact as the tetrahedron's single base.
-
-*Note: This kind of collapse — noticing that two apparently-independent facts are one fact seen from different angles — is the move CGP is built to surface. Compression 3 is the protocol performing that move on itself.*
+talking about*.
 
 #### Install
 
@@ -410,71 +432,12 @@ When claims are stored as an ordered array, the position in the array is the cla
 
 Individual claims become URL-addressable when they need to be referenced: claim N in a channel's log is addressable under `cgp:/s/<s>/o/<o>/c/<channel>/<event-n>`. The URL is constructed on demand from the log's location and the claim's position; it does not live inside the claim itself.
 
-## Structural Compression
 
-CGP gets most of its efficiency from a single design move applied repeatedly: **if a fact is already carried by the structure, the data does not restate it.** Each time the protocol finds a place where structure can carry a fact "for free," a variable disappears from the data without any loss of information.
+**Claim Tuple (TIME, CHANNEL, SOURCE, KEY, VALUE)**
 
-Three compressions are load-bearing in the protocol, and each reveals the same pattern at a different level.
-
-### Compression 1 — Array Index Doubles as Event Counter
-
-An append-only array's positional index (0, 1, 2, ...) and the URL's `<event-n>` counter are the same integer doing two jobs. Storing both would mean writing the value twice and risking divergence.
-
-The protocol collapses them: **the array index IS the event-n**. One integer does three jobs — array position, event identity, temporal ordering within the channel. See "Identity Is Positional" in the Canonical Claim Form section for how this plays out in practice.
-
-### Compression 2 — URL is Both Location and Instance
-
-Traditional data models separate addresses from content — you have a pointer, you dereference it, you get the value. CGP collapses this: ID, reference, and instance are one concept viewed from three directions (see "IDs, References, and Instances" at the top of this guide).
-
-The consequence: claims can hold URLs in their `channel` and `source` columns without annotating them as references. In CGP, any URL-shaped value *is* a reference — URLs are the only way to address things, and addresses and values are the same structure.
-
-### Compression 3 — Anchor as Referent Selector
-
-`/data` holds exactly one row: the anchor. That single row is the act of 
-selection — out of everything the observatron could have pointed at, it 
-pointed at *this one*. Every other facet is a facet **of the anchor**: 
-`/meaning` describes it, `/structure` constrains it, `/context` logs its 
-history. Change the anchor and you change what the other three facets 
-are about.
-
-This is why `/data` is one row, not many. Two anchors would mean the 
-other facets are simultaneously describing two different referents, and 
-nothing they say would be unambiguous. The single-row rule isn't a 
-storage convention — it's what makes node identity possible.
-
-The tetrahedron geometry follows from this, not the other way around. 
-Each spike has a base (Data) pressed flat against the observatron's 
-surface with three elevated faces (Meaning, Structure, Context) rising 
-above it. The base is the attachment point because the base is the 
-referent; the three rising faces describe the referent the base selected. 
-A tetrahedron without its base isn't a tetrahedron — it's three floating 
-triangles with nothing to be triangles *about*.
-
-Once the selection role is clear, the other roles `/data` plays are the 
-same role viewed from different directions:
-
-- **Referent selector** — which thing are we talking about.
-- **Attachment point** — the spike's base, pinning it to the node.
-- **Shannon message** — the transmitted content, which *is* the referent 
-  when it crosses a boundary.
-- **Instance** — what the URL returns when dereferenced, which *is* the 
-  referent when asked.
-- **Comparison target** — what claims assert values against, which *is* 
-  the referent when tested.
-
-One facet, one role, five projections. The compression isn't that `/data` 
-does five jobs — it's that all five jobs are the same job, asked in 
-different directions.
-
-### What This Compression Buys: Comparable Claims
-
-When all three compressions are in place, a claim becomes a tuple that reads naturally as physics:
-
-**(TIME, CHANNEL, SOURCE, KEY, VALUE)**
-
-- **TIME**: when the transmission happened (Context timestamp, or the ordinal event-n if you only need ordering)
 - **CHANNEL**: what kind of transmission it was (URL of the event definition)
 - **SOURCE**: who transmitted it (URL of the emitting node)
+- **TIME**: when the transmission happened (Context timestamp, or the ordinal event-n if you only need ordering)
 - **KEY**: where in the payload (path within the facet)
 - **VALUE**: what was asserted at that position
 
@@ -534,7 +497,7 @@ function createObservatron({ systemId, observatronId, urlManager }) {
   //   mintEvent({ channel }) → string (the event URL)
   //   mintAnchor({ eventUrl, filename, content, bytes, rows }) → string (the anchor URL)
   //   mintPath({ anchorUrl, header, values, columnIndex }) → string (the path URL)
-  //   appendContext({ url, channel, key, value }) → void
+  //   appendContext({ url, channel, key, value }) → void — pushes one element onto each of the four column arrays (timestamp, channel, key,  value) of the node's /context facet. timestamp is stamped by the runtime at append time. The four arrays must remain equal in length; this helper enforces that invariant.
   //   getState() → deep clone of the flat facet store
   //   dispatchStateChange() → fires 'cgp-state-change' with { event, state }
   //
@@ -543,6 +506,7 @@ function createObservatron({ systemId, observatronId, urlManager }) {
   // Observatron's /context gets one row: channel='observatron-bound'.
 }
 ```
+
 
 Scope: The facet store lives on the observatron instance (returned as part of getState()), not globally. One observatron = one store. Multiple observatrons on a page each have their own.
 Why one UrlManager instance per observatron. Counters are scoped per observatron anyway (event-n is per-channel-per-observatron), so there's no benefit to sharing a UrlManager. Keeping it instance-level means tests can be isolated.
@@ -628,13 +592,18 @@ When a user drops files onto the drag-and-drop wrapper, the observatron executes
        mintAnchor({ eventUrl, filename, content, bytes, rows })
        → cgp:/s/0/o/1/c/state-change/{n}/a/{m}
        
-       Anchor's /data = [{ anchor: anchorUrl }]  (self-referential, one-row table)
-       Anchor's /meaning = [{ symbol: anchorUrl, meaning: filename }]
-       Anchor's /structure = [{ constraint-key: 'kind', constraint-value: 'anchor' },
-                              { constraint-key: 'format', constraint-value: 'csv' },
-                              { constraint-key: 'bytes', constraint-value: bytes },
-                              { constraint-key: 'rows', constraint-value: rows }]
-       Anchor's /context = [{ channel: 'anchor-minted', key: 'filename', value: filename }]
+      Anchor's /data = { anchor: [anchorUrl] }  (self-referential, one row)
+      Anchor's /meaning = { symbol: [anchorUrl], meaning: [filename] }
+      Anchor's /structure = {
+        "constraint-key":   ["kind",   "format", "bytes", "rows"],
+        "constraint-value": ["anchor", "csv",    bytes,   rows]
+      }
+      Anchor's /context = {
+        timestamp: [<now>],
+        channel:   ["anchor-minted"],
+        key:       ["filename"],
+        value:     [filename]
+      }
 
    2c. Parse CSV. Split on \n, then on , to get headers and row values.
 
@@ -642,11 +611,18 @@ When a user drops files onto the drag-and-drop wrapper, the observatron executes
        mintPath({ anchorUrl, header, values, columnIndex })
        → cgp:/s/0/o/1/c/state-change/{n}/a/{m}/p/{k}
        
-       Path's /data = [{ anchor: pathUrl }]  (self-referential)
-       Path's /meaning = [{ symbol: pathUrl, meaning: header }]
-       Path's /structure = [{ constraint-key: 'type', constraint-value: 'string' },
-                            { constraint-key: 'columnIndex', constraint-value: k }]
-       Path's /context = [{ channel: 'path-minted', key: 'header', value: header }]
+       Path's /data = { anchor: [pathUrl] }
+       Path's /meaning = { symbol: [pathUrl], meaning: [header] }
+       Path's /structure = {
+        "constraint-key":   ["type",   "columnIndex"],
+        "constraint-value": ["string", k]
+       }
+       Path's /context = {
+        timestamp: [<now>],
+        channel:   ["path-minted"],
+        key:       ["header"],
+        value:     [header]
+      }
 
 3. After all minting completes, dispatch cgp-state-change:
    dispatchStateChange()
@@ -657,7 +633,7 @@ When a user drops files onto the drag-and-drop wrapper, the observatron executes
 
 - Zero files dropped: No minting. No event dispatched. (Drop target may glow briefly via CSS; that's a UX concern, not a runtime concern.)
 - Zero columns in a CSV: Mint the anchor. Mint no paths. Event still fires.
-- Zero rows in a CSV (only a header row): Mint the anchor and one path per header. Each path's /data row is self-referential (the path URL); the actual column values are empty arrays stored inside /structure or elsewhere — design decision worth pinning. For MVP, omit /data row beyond the anchor reference; column values can be surfaced in a later increment.
+- Zero rows in a CSV (only a header row): Mint the anchor and one path per header. Each path's `/data` is `{ anchor: [pathUrl] }` as usual
 - Multiple files dropped at once: ONE event. Multiple anchors (one per file). Paths under each anchor. One cgp-state-change dispatch at the end.
 
 **Why one event per drop. The drop is a single user gesture — one "state change" event to the host. Each file is a distinct anchor under that event. This preserves the "event = one boundary-crossing" semantics.**
@@ -756,34 +732,38 @@ The right panel (state display) shows a JSON object with exactly two entries:
 ```json
 {
   "cgp:/s/0": {
-    "/data": [{ "anchor": "cgp:/s/0" }],
-    "/meaning": [{ "symbol": "cgp:/s/0", "meaning": "user system" }],
-    "/structure": [
-      { "constraint-key": "kind", "constraint-value": "system" }
-    ],
-    "/context": [
-      {
-        "timestamp": "<ISO-8601-UTC-ms>",
-        "channel": "system-instantiated",
-        "key": "systemId",
-        "value": "0"
-      }
-    ]
+    "/data": { "anchor": ["cgp:/s/0"] },
+    "/meaning": {
+      "symbol":  ["cgp:/s/0"],
+      "meaning": ["user system"]
+    },
+    "/structure": {
+      "constraint-key":   ["kind"],
+      "constraint-value": ["system"]
+    },
+    "/context": {
+      "timestamp": ["<ISO-8601-UTC-ms>"],
+      "channel":   ["system-instantiated"],
+      "key":       ["systemId"],
+      "value":     ["0"]
+    }
   },
   "cgp:/s/0/o/1": {
-    "/data": [{ "anchor": "cgp:/s/0/o/1" }],
-    "/meaning": [{ "symbol": "cgp:/s/0/o/1", "meaning": "observatron" }],
-    "/structure": [
-      { "constraint-key": "kind", "constraint-value": "observatron" }
-    ],
-    "/context": [
-      {
-        "timestamp": "<ISO-8601-UTC-ms>",
-        "channel": "observatron-bound",
-        "key": "observatronId",
-        "value": "1"
-      }
-    ]
+    "/data": { "anchor": ["cgp:/s/0/o/1"] },
+    "/meaning": {
+      "symbol":  ["cgp:/s/0/o/1"],
+      "meaning": ["observatron"]
+    },
+    "/structure": {
+      "constraint-key":   ["kind"],
+      "constraint-value": ["observatron"]
+    },
+    "/context": {
+      "timestamp": ["<ISO-8601-UTC-ms>"],
+      "channel":   ["observatron-bound"],
+      "key":       ["observatronId"],
+      "value":     ["1"]
+    }
   }
 }
 ```
@@ -828,15 +808,675 @@ Total entries after two drops: 12 (the original 2 + 5 from first drop + 5 from s
 
 Any of these can be addressed in subsequent increments. The MVP's job is to make the four-facet graph materialize from a real user gesture, so every subsequent feature has a concrete runtime to build against.
 
-## Status Check — MVP Implementation Progress
+---
 
-From the original list of missing items for Claude Code to build an unambiguous MVP:
-| Task | In Progress | Testing | Done |
-|---|:---:|:---:|:---:|
-| 1. Runtime API Contract |  |  | ✅ |
-| 2. Event Definition File Structure |  |  | ✅ |
-| 3. Drop Handler Minting Sequence |  |  | ✅ |
-| 4. Drop Target Resolution (`cgp-target`) |  |  | ✅ |
-| 5. Directory Structure and Module Loading |  |  | ✅ |
-| 6. Test Fixture |  |  | ✅ |
-| 7. Acceptance Criteria |  |  | ✅ |
+## Reference for Implementation
+
+
+This document defines the core terms of the Context Graph Protocol. 
+Every term below has a specific meaning. Do not substitute synonyms, do 
+not treat terms as interchangeable, do not pattern-match to common usage 
+from other protocols. When in doubt, use the exact term defined here.
+
+---
+
+## The Three Structural Terms
+
+### Node
+
+A **node** is an observatron. Nothing else is a node.
+
+- An observatron is stationed at a boundary (a place where data crosses 
+  between systems: a UI, an API, a database edge).
+- An observatron has an address: `cgp:/s/<system>/o/<observatron>`.
+- "Node" and "observatron" are synonymous. Prefer "observatron" in code 
+  identifiers; "node" is fine in prose.
+
+**What is NOT a node:**
+- A spike is not a node.
+- A facet is not a node.
+- A system (`cgp:/s/0`) is a scope, not a node. It instantiates 
+  observatrons; it is not itself one.
+- A URL deeper than `cgp:/s/<s>/o/<o>` (events, anchors, paths) 
+  addresses a **spike**, not a node.
+
+### Spike
+
+A **spike** is a tetrahedron attached to an observatron's surface.
+
+- Every spike has exactly one **anchor** (held in its `/data` facet) 
+  that pins it to the observatron.
+- Every spike has four **facets**: `/data`, `/meaning`, `/structure`, 
+  `/context`.
+- Spikes are URL-addressable. Any CGP URL with a `/c/`, `/a/`, or `/p/` 
+  segment addresses a spike.
+- Geometrically: the anchor is the base of the tetrahedron (pressed flat 
+  against the observatron's surface); the other three facets are the 
+  three elevated faces rising above it.
+
+Examples of spike URLs:
+- `cgp:/s/0/o/1/c/state-change/4` — an event spike
+- `cgp:/s/0/o/1/c/state-change/4/a/0` — an anchor spike
+- `cgp:/s/0/o/1/c/state-change/4/a/0/p/0` — a path spike (one column of 
+  a dropped CSV)
+
+**What is NOT a spike:**
+- An observatron is not a spike (it's the node the spikes attach to).
+- A facet is not a spike (it's a face of a spike).
+
+### Facet
+
+A **facet** is one of the four faces of a spike.
+
+- The four facets are: `/data`, `/meaning`, `/structure`, `/context`.
+- A facet is not independently addressable as a "thing." It is always 
+  the `/data` of some spike, the `/meaning` of some spike, etc.
+- Writing `cgp:/s/0/o/1/data` is valid syntactically; it means "the 
+  /data facet of the observatron-1 spike." The URL still addresses a 
+  facet-of-a-spike, not a freestanding entity.
+
+Each facet has a specific internal shape (columnar; see 
+`Facet Storage Is Columnar` in the main spec).
+
+---
+
+## The Relationship, Stated Geometrically
+
+An observatron is a ball. Tetrahedral spikes stick out of its surface. 
+Each spike has one face (the anchor) pressed flat against the ball, and 
+three faces rising away from it.
+
+- Ball = node = observatron
+- Spike = the thing sticking out of the ball
+- Facet = one face of a spike
+
+You cannot have a spike without a node to attach to. You cannot have a 
+facet without a spike to be a face of. The hierarchy is strict:
+
+    observatron (node)
+      └── spike (tetrahedron attached to node's surface)
+            ├── /data      (the anchor, base of the tetrahedron)
+            ├── /meaning   (elevated face)
+            ├── /structure (elevated face)
+            └── /context   (elevated face)
+
+---
+
+## Common Mistakes to Avoid
+
+### Mistake: calling a facet a "node"
+
+Wrong: *"The /context facet of the node is a time-ordered log."*  
+Right: *"The /context facet of the spike is a time-ordered log."*  
+Or: *"The /context facet at this URL is a time-ordered log."*
+
+The facet belongs to a spike. The spike attaches to a node. The facet 
+does not attach to the node directly.
+
+### Mistake: calling a spike a "node"
+
+Wrong: *"Every URL in CGP addresses a node."*  
+Right: *"Every URL in CGP addresses either a node (observatron) or a 
+spike (attached to an observatron)."*
+
+Only `cgp:/s/<s>/o/<o>` URLs address nodes. Deeper URLs address spikes.
+
+### Mistake: treating the four facets as peers of a node
+
+Wrong: *"A node has four child objects: data, meaning, structure, 
+context."*  
+Right: *"A spike has four facets. The spike is attached to a node."*
+
+The four facets are faces of one spike, not four sibling structures 
+hanging off a node.
+
+### Mistake: using "node" as a generic word for "URL-addressable thing"
+
+Wrong: *"Every node carries four facets."* (This blurs whether you mean 
+observatrons or spikes.)  
+Right: Either *"Every observatron carries spikes, and every spike has 
+four facets,"* or, if you specifically mean the thing-at-a-URL, 
+*"Every URL addresses either a node or a spike, each of which has four 
+facets."*
+
+"Node" is a specific term for observatron. Do not widen it.
+
+---
+
+## Quick Reference for Code
+
+When writing code, use these identifier conventions:
+
+| Concept | Prefer | Avoid |
+|---|---|---|
+| An observatron instance | `observatron`, `obs` | `node` (ambiguous in code) |
+| A URL addressing an observatron | `observatronUrl` | `nodeUrl` |
+| A URL addressing a spike | `spikeUrl` or the specific kind: `eventUrl`, `anchorUrl`, `pathUrl` | `nodeUrl` |
+| The four faces | `facet`, `facets` | `field`, `property`, `attribute` |
+| `/data`'s single row | `anchor` | `root`, `identity` |
+
+When reading URLs, identify what they address:
+- `cgp:/s/0` → a system (scope, not a node)
+- `cgp:/s/0/o/1` → an **observatron** (a **node**)
+- `cgp:/s/0/o/1/c/.../a/.../p/...` → a **spike**
+
+Everything past `/o/<id>` is a spike URL.
+
+---
+
+## One-Line Summary for Context Injection
+
+> In CGP: an **observatron** is a **node**; a **spike** is a tetrahedron 
+> attached to a node, addressable at any CGP URL past `/o/<id>`; a 
+> **facet** is one of four faces of a spike (`/data`, `/meaning`, 
+> `/structure`, `/context`). Facets are not nodes. Spikes are not 
+> nodes. Only observatrons are nodes.
+
+
+
+
+
+
+
+
+# CGP for Regulated Industries — Audit Trails That Aren't Bolted On
+
+*For product managers in finance, life sciences, healthcare, and other 
+regulated sectors.*
+
+---
+
+## The problem every regulated industry is paying for twice
+
+In any regulated industry, two things have to be true about every 
+number your systems produce:
+
+1. **It was correct when it was produced.**
+2. **You can prove, years later, how it was produced.**
+
+Meeting the first costs you engineering. Meeting the second costs you 
+engineering *again* — usually more of it. Audit logs, trace IDs, event 
+streams, data lineage tools, replay harnesses, compliance dashboards, 
+point-in-time reconstruction systems. A parallel stack, running 
+alongside the real system, duplicating its work to make it explainable.
+
+When regulators ask how a trade was priced, how a drug dosage was 
+calculated, how a credit decision was made, or how a lab result was 
+derived, the answer lives in the second stack — if it was built 
+correctly, if it stayed in sync, if the logs weren't truncated, if the 
+trace-id was propagated, if the schema didn't drift. Each of those 
+"ifs" is a failure mode that has cost real companies real money in 
+fines, settlements, and restatements.
+
+**The Context Graph Protocol removes the second stack.** Audit is not a 
+layer you add to CGP. Audit is what CGP produces by default, because 
+every calculation is already a record of itself.
+
+---
+
+## What "structural audit" means
+
+In CGP, every calculation is stored in the same shape as every other 
+piece of data the protocol handles. A formula — say, a risk score, a 
+drug interaction check, a claims adjudication rule — isn't code hidden 
+inside a service. It's an addressable object in the graph, with four 
+facets:
+
+- What it's named and what it's about.
+- What its inputs and outputs are.
+- **Every step of how it ran, when, with what operands, and what each step produced.**
+- A permanent identity (a URL).
+
+When the formula executes, the third item — the stepwise trace — writes 
+itself automatically, in the same storage the rest of the system uses. 
+There is no separate logging path. There is no "did we remember to log 
+this" question.
+
+The consequence: if the calculation happened, the audit exists. If the 
+audit is missing, the calculation didn't happen. The two are the same 
+record, not two records that have to be kept in sync.
+
+---
+
+## What this gives you, in business terms
+
+### 1. Deterministic replay
+
+"Show me exactly how this number was calculated on this date."
+
+Every step of the calculation is recorded with timestamps, operation 
+names, input values, and output values. Anyone with access to the graph 
+can rerun the calculation from first principles and get the same answer 
+— or discover a discrepancy. No specialized replay harness, no separate 
+historical snapshot service.
+
+**Who pays for this today:** trading desks with T+1 settlement 
+obligations, clinical trial systems under 21 CFR Part 11, insurance 
+claims systems under state regulations, anyone subject to SOX or 
+equivalent financial controls.
+
+### 2. Point-in-time reconstruction
+
+"What did the calculation mean back then, not what does it mean now?"
+
+Each operation in a formula (divide, compare, lookup, apply-rate) is 
+itself an addressable object with its own definition. If that 
+definition changes — a tax rate is updated, a clinical protocol is 
+revised, a credit model is retrained — the old version is still 
+reachable at its old address. A calculation performed under the old 
+definition audits against the old definition, not against whatever is 
+current.
+
+**Who pays for this today:** any business where rules change over time 
+and historical decisions have to be defensible under the rules that 
+existed when they were made. Banking regulation, clinical guidelines, 
+tax codes, insurance underwriting, regulatory submissions.
+
+### 3. Diffable executions
+
+"Two systems ran the same calculation and got different answers. Where 
+did they diverge?"
+
+Two executions of the same formula produce two traces with the same 
+sequence of operations. A line-by-line comparison shows exactly which 
+step first produced a different intermediate result. Root cause 
+analysis that would take a team days of digging takes minutes.
+
+**Who pays for this today:** reconciliation teams at clearing houses, 
+inter-bank settlement, multi-vendor clinical platforms, any system that 
+must agree with a counterparty's system.
+
+### 4. Dependency tracing
+
+"Which inputs, upstream, actually influenced this output?"
+
+Every step records which earlier values it consumed. A calculation's 
+full provenance — every upstream input that touched the final number — 
+is walkable by following references. No separate data lineage tool is 
+needed.
+
+**Who pays for this today:** anyone running a data lineage product 
+(Collibra, Alation, Informatica EDC, and dozens of bespoke internal 
+tools exist specifically to provide a shadow of this).
+
+### 5. Audit of audit
+
+"The auditor reviewed step 3 and certified it. Who reviewed the 
+auditor?"
+
+An auditor's certification is itself a record in the graph, attached to 
+the specific step they reviewed. A compliance officer's review of the 
+auditor is another record, attached to the first. Chains of review, 
+attestation, and sign-off compose without a separate workflow system.
+
+**Who pays for this today:** internal audit departments, regulatory 
+affairs groups, model validation teams, anyone operating under 
+three-lines-of-defense frameworks.
+
+### 6. Cross-system reconciliation with no schema negotiation
+
+"Our vendor calculated it one way. We calculated it another. How do we 
+prove who is right without sharing our source code?"
+
+Two independent implementations of the same formula produce traces in 
+the same shape. The traces can be compared directly — no integration 
+work, no schema mapping, no translation layer. Disagreements are 
+mechanically detectable by anyone with both traces.
+
+**Who pays for this today:** bank-counterparty reconciliation, 
+sponsor-CRO data exchange in clinical trials, insurance claims 
+exchanges, inter-agency regulatory submissions.
+
+---
+
+## Why this is a moat, not a feature
+
+Every existing compliance stack assumes the audit system is separate 
+from the production system. SOX programs are built on this assumption. 
+21 CFR Part 11 is built on this assumption. GDPR Article 30 records of 
+processing are built on this assumption. The entire governance-risk-
+compliance software category exists because audit and production are 
+separate concerns that must be reconciled.
+
+CGP doesn't compete with those tools by being a better separate audit 
+stack. It competes by **removing the separation.** A company running on 
+CGP doesn't need a data lineage tool, because lineage is inherent. 
+Doesn't need a trace propagation library, because every calculation is 
+already traced. Doesn't need a replay harness, because the trace is the 
+replay. Doesn't need point-in-time snapshots, because every version of 
+every operation is permanently addressable.
+
+This is not an incremental improvement over the current state of the 
+art. It is a structural change that eliminates categories of product 
+rather than improving them. That is the definition of a moat: not 
+"better," but "makes the previous category unnecessary."
+
+---
+
+## What this means for your product
+
+If you work on a product that does any of the following, CGP changes 
+the cost structure underneath you:
+
+- Calculates numbers that regulators can ask about
+- Produces outputs that customers, counterparties, or partners must 
+  reconcile against
+- Implements rules that change over time and must be defensible against 
+  their historical versions
+- Requires any form of review, attestation, or sign-off workflow
+- Feeds data into downstream systems where lineage matters
+
+In these environments, your current product is carrying the weight of a 
+parallel audit stack whether you see it that way or not. Some of that 
+weight is in code you wrote. Some is in vendor contracts. Some is in 
+headcount — compliance engineers, audit liaisons, reconciliation teams. 
+CGP does not eliminate all of that weight. It eliminates the structural 
+*need* for it, which is the precondition for eliminating the rest.
+
+The companies that adopt this shape first will have a defensible cost 
+advantage in every regulated market they operate in. Not because their 
+audit is nicer to look at — because their audit is free.
+
+---
+
+## What to ask your engineering team
+
+Three questions to sanity-check whether CGP is relevant to your 
+product:
+
+1. *How much of our current codebase exists specifically to make other 
+   parts of the codebase explainable?* (Logging, tracing, lineage, 
+   replay, snapshotting.) If the answer is "more than we'd like to 
+   admit," CGP is relevant.
+
+2. *What would we do differently if every calculation were 
+   automatically recorded, replayable, and addressable by URL?* If the 
+   answer includes "deprecate a vendor," "retire a system," or "reduce 
+   a team's scope," CGP is a cost-reduction play, not an experiment.
+
+3. *If a regulator asked us today to prove how a specific output was 
+   produced three years ago, how long would that take, and how 
+   confident would we be in the answer?* If the honest answer is 
+   "weeks, and not very confident," CGP addresses an operational risk 
+   you are already carrying.
+
+---
+
+## Summary
+
+Regulated industries pay an ongoing tax to keep audit infrastructure in 
+sync with production infrastructure. CGP collapses the two. Every 
+calculation records itself in the same shape as the data it operates 
+on. Replay, lineage, point-in-time reconstruction, diffing, attestation 
+chains, and cross-system reconciliation are consequences of that shape, 
+not features built on top of it.
+
+This is the business case. The technical sections of this guide explain 
+the mechanism.
+
+### Compression 4 — Operations as Spikes
+
+An operation (divide, compare, lookup, hamming-ball) isn't a primitive 
+hidden inside a runtime. It's a spike at a URL, with the same four 
+facets as everything else in the graph.
+
+When a formula's `/context` row names `cgp:/root/ops/divide` in its 
+channel column, that URL dereferences to a full spike: `/meaning` 
+describes what divide means mathematically, `/structure` declares its 
+type signature (two numeric operands, one numeric result), and 
+`/context` can optionally log every invocation protocol-wide.
+
+This one move — *an operation is a spike* — collapses four systems 
+that are normally built separately:
+
+- **Audit** falls out because the formula's `/context` already records 
+  every step with timestamps, operands, and results.
+- **Type-checking** falls out because each operation's `/structure` is 
+  a URL-reachable signature. Walk the channel column, dereference each 
+  op, verify operand types match. No separate type system.
+- **Validation** falls out because the same walk detects missing 
+  operations, undefined operands, and shape mismatches before execution.
+- **Documentation** falls out because each operation's `/meaning` is a 
+  self-describing definition, reachable by following the same URL that 
+  the formula already references.
+
+Four concerns, one structure. The compression isn't that one spike 
+shape serves four purposes — it's that the four purposes are the same 
+purpose, asked from different directions: *what does this operation do, 
+and how do I know?*
+
+The pattern generalizes beyond formulas. Any process whose steps 
+reference named kinds — workflows referencing activities, pipelines 
+referencing stages, state machines referencing transitions — gets the 
+same four systems for free by making the named kinds themselves into 
+spikes.
+
+Here's a drop-in section that covers formulas-as-spikes (with the `/context`-is-the-execution-trace move), reification, and the stepwise audit payoff. Written as one coherent section you can paste in as-is and restructure later.
+
+Where it goes: I'd put this right after the **Canonical Claim Form** section and before **In Progress** — it's protocol-level content that belongs with the core spec, not in the implementation appendix. Keeps the dev-facing narrative flowing from "here's what a claim is" → "here's what formulas and reification look like as claims" → "here's the MVP."
+
+```markdown
+## Formulas and Reification
+
+The canonical claim form handles two things most protocols treat as 
+separate concerns: **formulas** (computation) and **reification** 
+(claims about claims). In CGP both fall out of the same structure 
+without any special machinery.
+
+### Formulas as Spikes
+
+A formula is a spike at a URL under `cgp:/root/formulas/`. It has the 
+same four facets as every other spike in the graph.
+
+For the dark fraction formula — δ = 1 − |Bᵣ| / 2ⁿ — the spike lives at 
+`cgp:/root/formulas/dark-fraction` and decomposes like this:
+
+- **`/data`** — the anchor, self-referential (one row, 
+  `{ anchor: ["cgp:/root/formulas/dark-fraction"] }`). The formula's 
+  identity.
+- **`/meaning`** — the mathematical description: what δ means, in 
+  Unicode math as the canonical form: `δ = 1 − |Bᵣ| / 2ⁿ`. Readable by 
+  a human, parseable by a runtime, language-neutral.
+- **`/structure`** — the type signature as JSON Schema constraints: 
+  inputs `n` and `r` are integers, output `δ` is a float in [0, 1]. 
+  This is what `/structure` is for: static shape of the formula's 
+  interface.
+- **`/context`** — the execution trace. Each step of the calculation 
+  is a row.
+
+The last item is where CGP differs from how most systems handle 
+computation. `/context` is already a time-ordered log of events. A 
+formula's execution *is* a sequence of time-ordered events 
+(operations). The log and the execution are the same thing.
+
+### Unicode Math as Canonical
+
+The formula as a reader would write it on paper is the formula 
+CGP stores. Unicode math — `δ = 1 − |Bᵣ| / 2ⁿ` — is language-neutral, 
+implementation-neutral, and parseable by any host runtime that wants to 
+compile it.
+
+A JavaScript runtime can read the expression, parse it, and realize it 
+as a function:
+
+```javascript
+document.querySelectorAll('cgp-formula').forEach(el => {
+  const name = el.getAttribute('name');
+  const expr = el.textContent.trim();
+  // parse expr and compile to a function
+  // darkFraction = (n, r) => 1 - hammingBall(n, r) / 2**n;
+});
+```
+
+A Python runtime can do the same with SymPy. A Rust runtime can 
+generate a compiled function. Each implementation realizes |Bᵣ| 
+however it wants — closed-form, recursive, lookup table — as long as 
+the output matches the spec.
+
+**The formula is the spec. Code is one realization of it.** Math 
+travels across languages without translation; code doesn't. Declaring 
+math as the canonical form means a Polish mathematician, an American 
+engineer, and an AI can all read the formula identically.
+
+The one direction CGP does *not* attempt: lifting arbitrary code back 
+to math. Code can have side effects, mutation, control flow, closures 
+— none of which map to pure math in general. The compilation arrow 
+points one way: math → code. If you want provenance between code and 
+math, write the math first (in a `<cgp-formula>` tag or spike) and 
+derive code from it.
+
+### Execution as `/context`
+
+When the formula runs, each step appends one row to its `/context`. 
+The four columns do their normal work:
+
+```json
+"/context": {
+  "timestamp": [
+    "2026-04-24T19:00:00.001Z",
+    "2026-04-24T19:00:00.002Z",
+    "2026-04-24T19:00:00.003Z",
+    "2026-04-24T19:00:00.004Z",
+    "2026-04-24T19:00:00.005Z"
+  ],
+  "channel": [
+    "cgp:/root/ops/hamming-ball",
+    "cgp:/root/ops/power",
+    "cgp:/root/ops/divide",
+    "cgp:/root/ops/subtract",
+    "cgp:/root/ops/assign"
+  ],
+  "key": [
+    "operands",
+    "operands",
+    "operands",
+    "operands",
+    "operands"
+  ],
+  "value": [
+    { "operand-1": "n",     "operand-2": "r",          "result": "|Bᵣ|" },
+    { "operand-1": "2",     "operand-2": "n",          "result": "2ⁿ" },
+    { "operand-1": "|Bᵣ|",  "operand-2": "2ⁿ",         "result": "ratio" },
+    { "operand-1": "1",     "operand-2": "ratio",      "result": "difference" },
+    { "operand-1": "δ",     "operand-2": "difference", "result": "δ" }
+  ]
+}
+```
+
+Read row 3 as a sentence: *at 19:00:00.003, the formula invoked 
+`divide` with operands |Bᵣ| and 2ⁿ, producing ratio.* That's a 
+well-formed claim. The formula executing is the formula emitting 
+claims about itself.
+
+Notice what the `channel` column holds: **URLs, not strings**. 
+`cgp:/root/ops/divide` is itself a spike, with its own four facets:
+
+- `/meaning`: "arithmetic division over reals"
+- `/structure`: input types (two numerics), output type (one numeric)
+- `/context`: optional protocol-wide log of every invocation
+- `/data`: the op's anchor, self-referential
+
+An auditor dereferences the URL to see exactly what `divide` meant at 
+the time it was invoked. If `divide` is later redefined (e.g., to 
+change floating-point semantics), the old definition stays reachable 
+at its old address and old executions still audit correctly.
+
+### Stepwise Audit, For Free
+
+Because every formula execution writes to `/context` using the 
+canonical claim shape, everything you'd normally build a separate 
+observability stack for comes out of the protocol by default:
+
+- **Every step is timestamped.** The `timestamp` column already ordered 
+  things; now it's also a wall-clock audit record.
+- **Every step names which operation ran.** The `channel` column holds 
+  the URL of the operation — not an opaque string. An auditor follows 
+  the URL to read the operation's definition as it existed at 
+  invocation time.
+- **Every step records operands and result.** The `key`/`value` columns 
+  capture what went in and what came out. Data dependencies between 
+  steps are visible.
+- **The trace is replayable.** Scan the `channel` column, execute each 
+  op, compare each computed result to the recorded result. Any 
+  discrepancy is a bug or tamper.
+- **The trace is diffable.** Two executions of the same formula produce 
+  two `/context` logs with the same channel sequence. `diff` on the 
+  value column pinpoints the first step where intermediate results 
+  diverged.
+
+### Compound Audit Trails
+
+Formulas compose, and the audit composes with them.
+
+Suppose `dark-fraction` is one input to a bigger formula — say, a risk 
+score. The risk score is a spike. Its `/context` logs ops. One of 
+those ops might be `cgp:/root/ops/invoke-formula` with value 
+`cgp:/root/formulas/dark-fraction`. An auditor following that URL 
+lands on the dark-fraction spike's `/context` and sees its five steps. 
+Step 1 invokes `hamming-ball`, which is itself a formula whose 
+`/context` decomposes further into primitive ops.
+
+**The audit trail is a tree, walkable by dereferencing URLs.** Every 
+level of abstraction is addressable. There is no logging framework to 
+configure, no trace-id to propagate, no separate observability stack. 
+The protocol is the observability stack.
+
+### Reification: Claims About Claims
+
+A claim has a URL. That URL can itself be the subject of another claim. 
+When one observatron emits a claim about another observatron's claim, 
+the protocol handles it the same way it handles any other claim — 
+because the protocol doesn't privilege "original" claims over "claims 
+about claims." Every claim is a row in the canonical form with a URL.
+
+This is what RDF calls reification: a statement about a statement. In 
+CGP it falls out of the recursion without any special machinery.
+
+An auditor reviewing step 3 of a dark-fraction execution emits a claim 
+whose `key` column points at the formula's `/context` row:
+
+```
+channel:   cgp:/root/events/audit/step-certified
+source:    cgp:/s/0/o/auditor-42
+timestamp: 2026-04-25T10:00:00.000Z
+key:       cgp:/root/formulas/dark-fraction/context/3
+value:     "step reviewed; operands and result verified"
+```
+
+Read as a sentence: *at 10:00:00 on 2026-04-25, observatron auditor-42 
+asserted that step 3 of dark-fraction's context has been reviewed and 
+verified, as a claim of kind step-certified.*
+
+The claim's `key` column holds the URL of another claim's `/context` 
+row. That's all reification is. The subject of the certification is 
+another claim; the protocol doesn't notice, because a URL is a URL.
+
+The audit record is now itself a first-class spike, addressable and 
+reifiable. A compliance officer's review of the auditor is another 
+claim whose `key` points at the auditor's certification. Chains of 
+review, attestation, and sign-off compose without any workflow system 
+— just claims pointing at claims pointing at claims.
+
+### Two Patterns of Graph Growth
+
+From this, two distinct patterns of graph growth emerge. Both use the 
+same mechanism (a claim's `key` names what the claim is about); they 
+grow the graph in different directions.
+
+**Reification — depth.** One observatron emits a claim. Another 
+observatron emits claims about that claim. Layers stack: claims about 
+claims about claims. Each layer sits at a different URL from the 
+layers below.
+
+**Co-observation — breadth.** Multiple observatrons emit claims about 
+the same underlying subject. Claims with the same `(key, channel)` 
+pair stack up as parallel observations. Readers walking the graph can 
+compare multiple perspectives on the same facet and see where 
+observatrons agree or disagree.
+
+The protocol supports both with the same mechanism: a claim's `key` 
+names what the claim is about, and observatrons emit whatever claims 
+they need. No central coordinator arbitrates. No schema dictates which 
+patterns may occur. The graph grows wherever observation actually 
+extends — depth, breadth, or both.
+```
