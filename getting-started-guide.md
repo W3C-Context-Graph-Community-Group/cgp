@@ -60,20 +60,18 @@ Position is structural; time is recorded. Clock skew between implementations doe
 
 This is why URLs don't carry timestamps directly. Position is the URL's job; time is Context's job. Each dimension lives in the place it naturally belongs, and the connection between them is derivable — dereference the URL, read the first Context row, get the time.
 
-## Motivation
-
-### Step 1 — See Dark Uncertainty (The Four Facet Model)
+## Step 1 — See Dark Uncertainty (The Four Facet Model)
 
 Every addressable unit in any system — a CSV column, a system prompt workflow on the backend, a UX field — gets four facets:
 
 - **Data** — The content wrapped by **Context Graph Protocol Language** (*CGPL*) markup and captured at an interaction event.
 - **Meaning** — The semantic domain the data refers to: what it *is about* in the world, not what it *is* on the page.
 - **Structure** — The constraints, generators, and validators of a schema (JSON Schema syntax is default).
-- **Context** — A time-ordered log of what has happened at this unit. Each row records `timestamp`, `channel`, `key`, `value` — rule firings, asks, resolutions, state changes, all in the same shape.
+- **Context** — A time-ordered log of what has happened at this unit. Each facet is a columnar store: `timestamp`, `channel`, `key`, and `value` are four parallel arrays of equal length. Row N of the log is element N of each array. Rule firings, asks, resolutions, state changes — all in the same shape.
 
 Same four facets everywhere. That uniformity is the geometry. Once it's in place, the invisible becomes addressable with a URL. Before we can do anything, we need to be able to measure it. Without a shared geometry, there's no shared "perspective lines" to make comparisons at all.
 
-### Step 2 — Score Dark Uncertainty in Real-Time (δ → "Dark Fraction Score")
+## Step 2 — Score Dark Uncertainty in Real-Time (δ → "Dark Fraction Score")
 
 With shared geometry, we can compute dark fraction:
 
@@ -85,7 +83,7 @@ Data is part of the Shannon "message" — the communicated information in a tran
 
 For a boundary with m variables, the formula operates on n = 3m verifiable facets — three per variable (Meaning, Structure, Context). r is how many of those facets have been verified. |B_r| is the Hamming ball cardinality. 2ⁿ is the joint configuration space.
 
-#### Calculating δ by Hand — The Simplest Case (m=1, n=3)
+### Calculating δ by Hand — The Simplest Case (m=1, n=3)
 
 Before the three-variable example, work through the simplest possible boundary: one column, fully unverified. This walks the formula step by step — the kind of thing you could compute on a napkin.
 
@@ -157,7 +155,7 @@ Worked example — *δ = 74.61%*. A CSV drop with three variables: Date, Oil Pri
 
 Closing each facet gap is a specific, countable action. Manual reduction becomes a measurable benchmark — the progression table below shows how δ moves as verifications accumulate.
 
-#### Symbol Legend
+### Symbol Legend
 
 | Symbol | Name | Description |
 |---|---|---|
@@ -170,7 +168,7 @@ Closing each facet gap is a specific, countable action. Manual reduction becomes
 | `2ⁿ` | joint configuration space (\|Ω\|) | All possible configurations across the n verifiable facets. For m=3, n=9 and 2⁹ = 512. |
 
 
-#### Facet Population Progression (m=3, n=9)
+### Facet Population Progression (m=3, n=9)
 
 For a three-variable boundary, δ moves through these values as facets are verified. Open the **Dark Fraction Calculator** and toggle facets to watch this progression live:
 
@@ -189,12 +187,12 @@ For a three-variable boundary, δ moves through these values as facets are verif
 
 Notice the S-curve. The first verifications barely move δ — the unverified space is combinatorially enormous. The middle verifications drop δ sharply. The final verifications finish the collapse. Verification effort pays off most in the middle of the reduction loop.
 
-#### Source of Truth
+### Source of Truth
 The Dark Fraction Calculator is the canonical reference implementation of this formula. Any claim in this spec about what δ should be for a given (m, r) pair can be verified by setting up that configuration in the calculator. The calculator handles large-m computation via log-space arithmetic; for m > 20, |Ω| exceeds a million configurations and naive integer math breaks. Implementations should follow the calculator's log-space approach when scaling.
 
 
 
-### Step 3 — Minimize Dark Uncertainty with Observatrons
+## Step 3 — Minimize Dark Uncertainty with Observatrons
 
 Observatrons can mechanize a specific task: *populate this facet given these inputs*. That's an engineering problem with a definition of done — not a vague "reduce uncertainty" goal. An **observatron** is the unit that performs this work: an autonomous state machine stationed at a boundary, watching what crosses, and resolving facets either deterministically or by asking a human.
 
@@ -207,7 +205,7 @@ In our **Getting Started** example, we will focus on Observatrons across the ent
 - **SQL**: Intent mapping to query slots
 
 
-## What CGP Is
+## The Context Graph Protocol - Overview
 The **Context Graph Protocol** is a syntax that layers over any other syntax — HTML, system prompts, CSV, JSON, SQL, plain text — to bind addressable units across systems to a shared four-facet geometry.
 
 Of the four facets introduced in Step 1, each plays a distinct role:
@@ -218,7 +216,7 @@ Of the four facets introduced in Step 1, each plays a distinct role:
 
 Because the graph's shape adapts as actions flow through it, we call it Liquid — the protocol's substrate moves between hosts and media without losing identity, taking whichever shape its container demands.
 
-## Try It Yourself — Dark Fraction Calculator
+### Try It Yourself — Dark Fraction Calculator
 
 Before diving into code, play with the geometry directly. The **Dark Fraction Calculator** lets you toggle facets on a single field and watch δ change in real time.
 
@@ -234,13 +232,60 @@ This is the core interaction the protocol enables. Everything in the rest of thi
 
 The fastest path from zero to a working CGP observation. Wrap a DOM element, drop a CSV onto it, watch the four-facet graph materialize in real time.
 
-### Install
+### Creating a Four Facet Model for Different Content
+
+#### Example: a URL encoded as FFM
+
+Here's `cgp:/s/0` — the system node — encoded as a four-facet model:
+
+    {
+      "/data": {
+        "anchor": ["cgp:/s/0"]
+      },
+      "/meaning": {
+        "symbol":  ["cgp:/s/0"],
+        "meaning": ["user system"]
+      },
+      "/structure": {
+        "constraint-key":   ["kind"],
+        "constraint-value": ["system"]
+      },
+      "/context": {
+        "timestamp": ["2026-04-24T18:30:00.123Z"],
+        "channel":   ["system-instantiated"],
+        "key":       ["systemId"],
+        "value":     ["0"]
+      }
+    }
+
+**The anchor rule.** `/data` has one column (`anchor`) with exactly one 
+row. That single row is the act of selection: out of everything you 
+could have pointed at — ten URLs, ten datasets, ten files in a dropped 
+folder — you pointed at *this one*.
+
+That choice is what makes the other three facets possible. `/meaning`, 
+`/structure`, and `/context` are facets **of the anchor**. They describe, 
+constrain, and log the history of the thing `/data` points to. Change 
+the anchor and you change what they're about. Two anchors in one `/data` 
+would mean the other three facets are simultaneously describing two 
+different referents — and then nothing they say is unambiguous.
+
+The other three facets have no row limit. `/meaning` can carry many 
+symbol→meaning pairs about the anchor. `/structure` can stack 
+constraints. `/context` grows as events accumulate. Only `/data` is 
+pinned to one row, because only `/data` answers *which thing are we 
+talking about*. See *Structural Compression → Compression 3* for why 
+this is the same fact as the tetrahedron's single base.
+
+*Note: This kind of collapse — noticing that two apparently-independent facts are one fact seen from different angles — is the move CGP is built to surface. Compression 3 is the protocol performing that move on itself.*
+
+#### Install
 
 ```bash
 npm install cgp-runtime cgp-components
 ```
 
-### Wrap an element
+#### Wrap an element
 
 Import the component once at the top of your page, then wrap any element you want to observe with a `<cgp-drag-and-drop>` tag:
 
@@ -260,7 +305,7 @@ The tag takes two attributes:
 
 The wrapper is transparent. The inner `<div>` remains the drop target. On page load, the wrapper instantiates an observatron and mints two nodes: `cgp:/s/0` (the system) and `cgp:/s/0/o/1` (the observatron), each with their four facets populated.
 
-### Listen for state changes
+#### Listen for state changes
 
 Every observation dispatches a `cgp-state-change` CustomEvent. Listen anywhere on the page:
 
@@ -314,7 +359,7 @@ Every URL has four facets, written as terminal path segments:
 
 All four apply at every slot depth. `cgp:/s/0/data` is valid. So is `cgp:/s/0/o/1/c/state-change/4/a/0/p/0/data`.
 
-Every `/context` facet is a four-column table — `timestamp`, `channel`, `key`, `value` — where rows accumulate in append-only order. Context is the collision surface: where actions, events, and timestamped interactions leave their trace on a node.
+Every /context facet is a four-column columnar store — `timestamp`, `channel`, `key`, and `value` are four parallel arrays of equal length, appended in lockstep. Row N of the log is element N of each array. Context is the collision surface: where actions, events, and timestamped interactions leave their trace on a node.
 
 ### Truncation
 
@@ -383,20 +428,43 @@ Traditional data models separate addresses from content — you have a pointer, 
 
 The consequence: claims can hold URLs in their `channel` and `source` columns without annotating them as references. In CGP, any URL-shaped value *is* a reference — URLs are the only way to address things, and addresses and values are the same structure.
 
-### Compression 3 — Anchor as Geometric Tetrahedron Base
+### Compression 3 — Anchor as Referent Selector
 
-Each spike is a tetrahedron geometrically: a base (Data) pressed flat against the observatron's surface, with three elevated faces (Meaning, Structure, Context) rising above it.
+`/data` holds exactly one row: the anchor. That single row is the act of 
+selection — out of everything the observatron could have pointed at, it 
+pointed at *this one*. Every other facet is a facet **of the anchor**: 
+`/meaning` describes it, `/structure` constrains it, `/context` logs its 
+history. Change the anchor and you change what the other three facets 
+are about.
 
-The base isn't just a face — it's the **attachment point**. It's what binds the spike to the node. A tetrahedron without its base isn't a tetrahedron; it's three floating triangles.
+This is why `/data` is one row, not many. Two anchors would mean the 
+other facets are simultaneously describing two different referents, and 
+nothing they say would be unambiguous. The single-row rule isn't a 
+storage convention — it's what makes node identity possible.
 
-This geometric role corresponds exactly to the role `/data` plays in the protocol. `/data` is:
+The tetrahedron geometry follows from this, not the other way around. 
+Each spike has a base (Data) pressed flat against the observatron's 
+surface with three elevated faces (Meaning, Structure, Context) rising 
+above it. The base is the attachment point because the base is the 
+referent; the three rising faces describe the referent the base selected. 
+A tetrahedron without its base isn't a tetrahedron — it's three floating 
+triangles with nothing to be triangles *about*.
 
-- The Shannon message — the transmitted content.
-- The anchor — what attaches this spike to the observatron.
-- The instance — what the URL returns when dereferenced.
-- The comparison target — what claims assert values against.
+Once the selection role is clear, the other roles `/data` plays are the 
+same role viewed from different directions:
 
-One facet doing four jobs. The geometry and the protocol agree: the base of the tetrahedron is where transmission, attachment, identity, and comparison all converge.
+- **Referent selector** — which thing are we talking about.
+- **Attachment point** — the spike's base, pinning it to the node.
+- **Shannon message** — the transmitted content, which *is* the referent 
+  when it crosses a boundary.
+- **Instance** — what the URL returns when dereferenced, which *is* the 
+  referent when asked.
+- **Comparison target** — what claims assert values against, which *is* 
+  the referent when tested.
+
+One facet, one role, five projections. The compression isn't that `/data` 
+does five jobs — it's that all five jobs are the same job, asked in 
+different directions.
 
 ### What This Compression Buys: Comparable Claims
 
@@ -487,24 +555,37 @@ File contents:
 {
   "url": "cgp:/root/events/observatron/state-change",
   "facets": {
-    "/data": [
-      { "anchor": "cgp:/root/events/observatron/state-change" }
-    ],
-    "/meaning": [
-      {
-        "symbol": "cgp:/root/events/observatron/state-change",
-        "meaning": "Fired by an observatron whenever its state changes. Host bindings dispatch this as the DOM event 'cgp-state-change'. Payload includes the full URL-keyed facet store at the moment of emission."
-      }
-    ],
-    "/structure": [
-      { "constraint-key": "type", "constraint-value": "object" },
-      { "constraint-key": "required", "constraint-value": "[event, state]" },
-      { "constraint-key": "properties.event.type", "constraint-value": "string" },
-      { "constraint-key": "properties.event.const", "constraint-value": "cgp:/root/events/observatron/state-change" },
-      { "constraint-key": "properties.state.type", "constraint-value": "object" },
-      { "constraint-key": "properties.state.description", "constraint-value": "flat URL-keyed map of facet stores" }
-    ],
-    "/context": []
+    "/data": {
+      "anchor": ["cgp:/root/events/observatron/state-change"]
+    },
+    "/meaning": {
+      "symbol": ["cgp:/root/events/observatron/state-change"],
+      "meaning": ["Fired by an observatron whenever its state changes. Host bindings dispatch this as the DOM event 'cgp-state-change'. Payload includes the full URL-keyed facet store at the moment of emission."]
+    },
+    "/structure": {
+      "constraint-key": [
+        "type",
+        "required",
+        "properties.event.type",
+        "properties.event.const",
+        "properties.state.type",
+        "properties.state.description"
+      ],
+      "constraint-value": [
+        "object",
+        "[event, state]",
+        "string",
+        "cgp:/root/events/observatron/state-change",
+        "object",
+        "flat URL-keyed map of facet stores"
+      ]
+    },
+    "/context": {
+      "timestamp": [],
+      "channel": [],
+      "key": [],
+      "value": []
+    }
   }
 }
 ```
@@ -525,7 +606,9 @@ const customEvent = new CustomEvent('cgp-state-change', {
 
 Why JSON, not JS. Keeps the event definition portable — non-JS implementations (Python, Rust) can read the same file. The four-facet shape is preserved verbatim.
 
-### 3. Drop Handler Minting Sequence
+### 3. Drop Handler Minting 
+
+
 When a user drops files onto the drag-and-drop wrapper, the observatron executes this sequence:
 
 
