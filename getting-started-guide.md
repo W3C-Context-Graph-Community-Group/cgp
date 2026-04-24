@@ -1131,145 +1131,6 @@ record, not two records that have to be kept in sync.
 
 ---
 
-## What this gives you, in business terms
-
-### 1. Deterministic replay
-
-"Show me exactly how this number was calculated on this date."
-
-Every step of the calculation is recorded with timestamps, operation 
-names, input values, and output values. Anyone with access to the graph 
-can rerun the calculation from first principles and get the same answer 
-— or discover a discrepancy. No specialized replay harness, no separate 
-historical snapshot service.
-
-**Who pays for this today:** trading desks with T+1 settlement 
-obligations, clinical trial systems under 21 CFR Part 11, insurance 
-claims systems under state regulations, anyone subject to SOX or 
-equivalent financial controls.
-
-### 2. Point-in-time reconstruction
-
-"What did the calculation mean back then, not what does it mean now?"
-
-Each operation in a formula (divide, compare, lookup, apply-rate) is 
-itself an addressable object with its own definition. If that 
-definition changes — a tax rate is updated, a clinical protocol is 
-revised, a credit model is retrained — the old version is still 
-reachable at its old address. A calculation performed under the old 
-definition audits against the old definition, not against whatever is 
-current.
-
-**Who pays for this today:** any business where rules change over time 
-and historical decisions have to be defensible under the rules that 
-existed when they were made. Banking regulation, clinical guidelines, 
-tax codes, insurance underwriting, regulatory submissions.
-
-### 3. Diffable executions
-
-"Two systems ran the same calculation and got different answers. Where 
-did they diverge?"
-
-Two executions of the same formula produce two traces with the same 
-sequence of operations. A line-by-line comparison shows exactly which 
-step first produced a different intermediate result. Root cause 
-analysis that would take a team days of digging takes minutes.
-
-**Who pays for this today:** reconciliation teams at clearing houses, 
-inter-bank settlement, multi-vendor clinical platforms, any system that 
-must agree with a counterparty's system.
-
-### 4. Dependency tracing
-
-"Which inputs, upstream, actually influenced this output?"
-
-Every step records which earlier values it consumed. A calculation's 
-full provenance — every upstream input that touched the final number — 
-is walkable by following references. No separate data lineage tool is 
-needed.
-
-**Who pays for this today:** anyone running a data lineage product 
-(Collibra, Alation, Informatica EDC, and dozens of bespoke internal 
-tools exist specifically to provide a shadow of this).
-
-### 5. Audit of audit
-
-"The auditor reviewed step 3 and certified it. Who reviewed the 
-auditor?"
-
-An auditor's certification is itself a record in the graph, attached to 
-the specific step they reviewed. A compliance officer's review of the 
-auditor is another record, attached to the first. Chains of review, 
-attestation, and sign-off compose without a separate workflow system.
-
-**Who pays for this today:** internal audit departments, regulatory 
-affairs groups, model validation teams, anyone operating under 
-three-lines-of-defense frameworks.
-
-### 6. Cross-system reconciliation with no schema negotiation
-
-"Our vendor calculated it one way. We calculated it another. How do we 
-prove who is right without sharing our source code?"
-
-Two independent implementations of the same formula produce traces in 
-the same shape. The traces can be compared directly — no integration 
-work, no schema mapping, no translation layer. Disagreements are 
-mechanically detectable by anyone with both traces.
-
-**Who pays for this today:** bank-counterparty reconciliation, 
-sponsor-CRO data exchange in clinical trials, insurance claims 
-exchanges, inter-agency regulatory submissions.
-
----
-
-## Why this is a moat, not a feature
-
-Every existing compliance stack assumes the audit system is separate 
-from the production system. SOX programs are built on this assumption. 
-21 CFR Part 11 is built on this assumption. GDPR Article 30 records of 
-processing are built on this assumption. The entire governance-risk-
-compliance software category exists because audit and production are 
-separate concerns that must be reconciled.
-
-CGP doesn't compete with those tools by being a better separate audit 
-stack. It competes by **removing the separation.** A company running on 
-CGP doesn't need a data lineage tool, because lineage is inherent. 
-Doesn't need a trace propagation library, because every calculation is 
-already traced. Doesn't need a replay harness, because the trace is the 
-replay. Doesn't need point-in-time snapshots, because every version of 
-every operation is permanently addressable.
-
-This is not an incremental improvement over the current state of the 
-art. It is a structural change that eliminates categories of product 
-rather than improving them. That is the definition of a moat: not 
-"better," but "makes the previous category unnecessary."
-
----
-
-## What this means for your product
-
-If you work on a product that does any of the following, CGP changes 
-the cost structure underneath you:
-
-- Calculates numbers that regulators can ask about
-- Produces outputs that customers, counterparties, or partners must 
-  reconcile against
-- Implements rules that change over time and must be defensible against 
-  their historical versions
-- Requires any form of review, attestation, or sign-off workflow
-- Feeds data into downstream systems where lineage matters
-
-In these environments, your current product is carrying the weight of a 
-parallel audit stack whether you see it that way or not. Some of that 
-weight is in code you wrote. Some is in vendor contracts. Some is in 
-headcount — compliance engineers, audit liaisons, reconciliation teams. 
-CGP does not eliminate all of that weight. It eliminates the structural 
-*need* for it, which is the precondition for eliminating the rest.
-
-The companies that adopt this shape first will have a defensible cost 
-advantage in every regulated market they operate in. Not because their 
-audit is nicer to look at — because their audit is free.
-
 ---
 
 ## What to ask your engineering team
@@ -1633,3 +1494,291 @@ The formula δ = 1 − |Bᵣ| / 2ⁿ is a computation. The sentence names *what 
 ## Plain English
 
 **δ tells you how blurry the boundary's view of itself is — what fraction of its own configuration space collapses into one undifferentiated dark class because verification hasn't reached it yet.** Verify a facet, the dark class shrinks, the partition gets finer, δ drops.
+
+---
+
+# Full-Memory Recurrence Operator (FMR)
+
+The canonical claim form captures individual observations; δ measures 
+how much configuration space is unverified at a snapshot. Neither 
+measures what happens when observations accumulate over time — whether 
+a trajectory of claims is stable, oscillating at the edge of criticality, 
+or exploding.
+
+The **full-memory recurrence operator** fills that gap. It is a CGP 
+formula spike that takes a sequence of observations, a declared memory 
+kernel, and a metric regime, and produces both a stability 
+classification and a trajectory fingerprint. Together with δ, it gives 
+CGP a complete observational instrument: δ for static coarseness, FMR 
+for dynamic stability, both computed over the same URL-addressed 
+object.
+
+FMR is also the mathematical backbone of CGP's claim to be a network 
+protocol rather than a local one. A spike is a local object. A 
+trajectory — a `/context` log unfolding across claims, observatrons, 
+and time — is a network object. FMR is how the protocol reasons about 
+trajectories that cross boundaries.
+
+---
+
+### The Formula in Unicode (canonical)
+
+```
+──────────────────────────────────────────────────────────────
+  FULL-MEMORY RECURRENCE OPERATOR (FMR)
+──────────────────────────────────────────────────────────────
+
+  Operator (base form):
+    xₙ = Σ_{k=0}^{n−1} cₖ · xₙ₋₁₋ₖ
+
+  Normalization (scale control):
+    Σ_{k=0}^{m} cₖ = g(n)
+    
+    g(n) = 1  ⟹  scale preserved
+    g(n) < 1  ⟹  damping
+    g(n) > 1  ⟹  growth
+    g(n) variable  ⟹  drift
+
+  Characteristic polynomial:
+    P(r) = rᵐ − Σ_{k=0}^{m−1} cₖ · rᵐ⁻¹⁻ᵏ
+
+  Stability classification (spectral radius):
+    max_i |rᵢ| < 1  ⟹  decay
+    max_i |rᵢ| = 1  ⟹  critical (oscillation / phase boundary)
+    max_i |rᵢ| > 1  ⟹  explosion
+
+  History sum (aggregator):
+    Sₙ = Σ_{k=0}^{n} xₖ
+
+  Feedback form (self-compensating memory):
+    xₙ = xₙ₋₁ − Sₙ₋₂
+
+  Level-dependent kernel (adaptive memory):
+    xₙ = Σ_{k=0}^{n−1} aₖ(n) · xₙ₋ₖ
+    
+    with:  Σ_{k=0}^{m} aₖ(n) = g(n)
+
+  Multi-metric trajectory (three-channel processing):
+    xₙ = w₁ · vₙ + w₂ · eₙ + w₃ · gₙ
+    
+    vₙ ∈ ℝᵈ          (Euclidean — raw vector)
+    eₙ ∈ 𝕊ᵈ⁻¹         (hypermetric cosine — normalized direction)
+    gₙ ∈ (V(G), λ)    (p-adic / Finsler at parameter λ)
+
+  Metric interpolation parameter:
+    λ ∈ [0, 1]
+    
+    λ = 0       Hamming       (discrete)          ◇
+    λ = 1/3     Linear        (flat)              ▽
+    λ = 2/3     Euclidean     (smooth)            ◯
+    λ = 1       Finsler       (branching)         ☯
+
+  Trajectory fingerprint:
+    F = Σ_{k=0}^{N} cₖ · xₙ₋ₖ
+
+  Process similarity (under scheduling perturbation):
+    d(S₁, S₂) = ‖F(S₁) − F(S₂)‖
+
+──────────────────────────────────────────────────────────────
+  LEGEND
+──────────────────────────────────────────────────────────────
+
+  xₙ         state at step n (scalar, vector, embedding, or graph)
+  cₖ         memory kernel coefficient at lag k
+  aₖ(n)      level-dependent kernel (varies with n)
+  g(n)       scale control function (1 = conservative)
+  Sₙ         cumulative history sum up to step n
+  P(r)       characteristic polynomial of the recurrence
+  rᵢ         roots of P(r) — eigenvalues of the memory operator
+  max |rᵢ|   spectral radius — stability classifier
+  vₙ         raw vector component (Euclidean metric)
+  eₙ         normalized embedding (cosine / hypermetric)
+  gₙ         graph component (p-adic / Finsler / ultrametric)
+  wⱼ         channel weight (Σ wⱼ = 1)
+  λ          metric interpolation parameter (Hamming → Finsler)
+  F          trajectory fingerprint (history signature)
+  d(S₁, S₂)  process distance under kernel F
+  ‖·‖        norm (metric-dependent per λ regime)
+  ◇ ▽ ◯ ☯    Unicode threshold markers for λ regimes
+──────────────────────────────────────────────────────────────
+```
+
+---
+
+### The `<cgp-formula>` Tag
+
+```html
+<cgp-formula name="full-memory-recurrence" regime="multi-metric">
+  <p align="center">
+    xₙ = Σ_{k=0}^{n−1} cₖ · xₙ₋₁₋ₖ
+  </p>
+  <p align="center">
+    P(r) = rᵐ − Σ_{k=0}^{m−1} cₖ · rᵐ⁻¹⁻ᵏ
+  </p>
+  <p align="center">
+    max |rᵢ| ⋛ 1 ⟹ {decay, critical, explosion}
+  </p>
+  <p align="center">
+    xₙ = w₁·vₙ + w₂·eₙ + w₃·gₙ    (λ-interpolated: Hamming → Euclidean → Finsler)
+  </p>
+  <p align="center">
+    F = Σ_{k=0}^{N} cₖ · xₙ₋ₖ
+  </p>
+</cgp-formula>
+```
+
+A single formula spike with five projections — the same object viewed 
+through its base form, its stability classifier, its spectral test, its 
+multi-metric form, and its fingerprint. A runtime can parse each `<p>` 
+block as one expression in the compound formula.
+
+---
+
+### The Four Facets (CGP spike at `cgp:/root/formulas/full-memory-recurrence`)
+
+```json
+{
+  "/data": {
+    "anchor": ["cgp:/root/formulas/full-memory-recurrence"]
+  },
+  "/meaning": {
+    "symbol":  ["cgp:/root/formulas/full-memory-recurrence"],
+    "meaning": ["Full-memory recurrence operator with spectral stability classification and multi-metric trajectory processing. Measures whether a sequence of observations is stable, critical, or explosive under a declared memory kernel, across interpolated metric regimes (Hamming / Euclidean / Finsler). Produces a trajectory fingerprint F for process comparison under scheduling perturbation. Complements the dark-fraction measure δ: where δ measures how much configuration space is unverified at a snapshot, FMR measures whether what is verified remains stable as the trajectory unfolds."],
+    "companion-to": ["cgp:/root/formulas/dark-fraction"],
+    "regime": ["multi-metric (λ-interpolated)"]
+  },
+  "/structure": {
+    "constraint-key": [
+      "inputs",
+      "inputs.x.type",
+      "inputs.c.type",
+      "inputs.lambda.type",
+      "inputs.lambda.range",
+      "output.F.type",
+      "output.stability.type",
+      "output.stability.values"
+    ],
+    "constraint-value": [
+      "[x_sequence, c_kernel, lambda]",
+      "array of states (scalar | vector | embedding | graph)",
+      "array of kernel coefficients (real)",
+      "metric interpolation parameter (real)",
+      "[0, 1]",
+      "fingerprint (same type as x elements)",
+      "stability classification (discrete)",
+      "[decay, critical, explosion]"
+    ]
+  },
+  "/context": {
+    "timestamp": [
+      "2026-04-24T19:30:00.000Z",
+      "2026-04-24T19:30:00.001Z",
+      "2026-04-24T19:30:00.002Z",
+      "2026-04-24T19:30:00.003Z",
+      "2026-04-24T19:30:00.004Z",
+      "2026-04-24T19:30:00.005Z"
+    ],
+    "channel": [
+      "cgp:/root/ops/full-memory-convolve",
+      "cgp:/root/ops/characteristic-polynomial",
+      "cgp:/root/ops/spectral-radius",
+      "cgp:/root/ops/classify-stability",
+      "cgp:/root/ops/lambda-project",
+      "cgp:/root/ops/fingerprint"
+    ],
+    "key": [
+      "operands",
+      "operands",
+      "operands",
+      "operands",
+      "operands",
+      "operands"
+    ],
+    "value": [
+      { "inputs": ["x_sequence", "c_kernel"],          "result": "x_n" },
+      { "inputs": ["c_kernel", "m"],                   "result": "P(r)" },
+      { "inputs": ["P(r)"],                            "result": "max|rᵢ|" },
+      { "inputs": ["max|rᵢ|"],                         "result": "{decay | critical | explosion}" },
+      { "inputs": ["x_sequence", "lambda"],            "result": "x_projected" },
+      { "inputs": ["x_sequence", "c_kernel", "N"],     "result": "F" }
+    ]
+  }
+}
+```
+
+#### Reading the execution trace
+
+Each row in `/context` is one step of applying the formula, named by a 
+channel URL under `cgp:/root/ops/`. Every op is itself a spike with its 
+own four facets (per *Compression 4 — Operations as Spikes*). An 
+auditor walking this column gets the complete computational lineage:
+
+1. **`full-memory-convolve`** — Apply the kernel over history to produce the next state.
+2. **`characteristic-polynomial`** — Build P(r) from the kernel coefficients.
+3. **`spectral-radius`** — Find max|rᵢ|, the eigenvalue that classifies dynamics.
+4. **`classify-stability`** — Project the spectral radius to one of three classes.
+5. **`lambda-project`** — Transform the trajectory to the requested metric regime.
+6. **`fingerprint`** — Compute the signature for process comparison.
+
+---
+
+### Why This Makes CGP a Network Protocol
+
+A spike is a local object: one observatron, one anchor, four facets. 
+You could describe the spike without ever leaving the observatron's 
+boundary. δ reduces to a property of that single boundary.
+
+A **trajectory** is not a local object. A trajectory is a sequence of 
+states that unfolds across observatrons, channels, and time. It is a 
+network phenomenon by construction. The `/context` log of any 
+sufficiently busy observatron is already a trajectory in this sense — 
+but CGP needs a way to ask questions *about* that trajectory, not just 
+store it.
+
+FMR is that mechanism. Once FMR is in the protocol:
+
+- **Any `/context` log can be analyzed for stability.** Is this 
+  observatron's behavior converging, oscillating, or diverging? 
+  Spectral radius answers it.
+- **Two observatrons can be compared by trajectory, not just by 
+  snapshot.** Two systems running the same formula on the same data 
+  should produce similar fingerprints F. If they don't, the protocol 
+  detects it without any shared schema.
+- **Scheduling perturbations become diagnostic.** Run the same process 
+  twice with reordered operations. If the fingerprints differ 
+  significantly, you've found a hidden order-dependency. This is a 
+  network-scale stability test.
+- **The λ slider becomes operational.** A spike registered at λ = 2/3 
+  (Euclidean) can be projected to λ = 0 (Hamming) for discrete 
+  comparison or λ = 1 (Finsler) for ultrametric analysis. The protocol 
+  carries the transformation; the observatron chooses the view.
+
+Without FMR, CGP can describe what each observatron sees but cannot 
+reason about what happens when observations chain. With FMR, the 
+protocol handles both the local and the networked cases with the same 
+mathematical object (URL-addressed trajectories) and the same 
+addressing scheme (claims pointing at claims).
+
+---
+
+### Relationship to Dark Fraction
+
+|  | δ (Dark Fraction) | FMR |
+|---|---|---|
+| **Measures** | Static coverage of configuration space | Dynamic stability of trajectory |
+| **Input** | (m, r) — variables verified | x-sequence, c-kernel, λ |
+| **Output** | Real ∈ [0, 1] — fraction unreachable | Classification: decay / critical / explosion |
+| **Metric** | Discrete coverage over {0,1}^(3m) | Any λ ∈ [0, 1] |
+| **Operates on** | Snapshot of facets | `/context` trajectory |
+| **Analog** | How blurry is the lens | Is the image holding still |
+| **Scope** | Local (one boundary) | Network (across boundaries) |
+
+Both are coarseness measures. δ is the spatial one; FMR is the temporal 
+one. They use the same object (URL-addressed facet store) and produce 
+complementary diagnostics. A protocol that has both can answer the two 
+questions regulated industries actually ask:
+
+- *"Can we see this?"* (δ — how much of the configuration space is 
+  verified)
+- *"Is what we see holding together?"* (FMR — is the trajectory stable 
+  as it accumulates)
