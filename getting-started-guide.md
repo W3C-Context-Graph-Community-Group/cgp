@@ -104,7 +104,7 @@ With shared geometry, we can compute dark fraction:
 δ = 1 − |Bᵣ| / 2ⁿ
 </p>
 
-Data is part of the Shannon "message" — the communicated information in a transmission event. Its presence is what brings the spike into existence; a spike that isn't attached to the observatron's surface doesn't exist. Each spike is still a full tetrahedron geometrically, with Data as the base anchoring it to the node and Meaning, Structure, and Context rising as the three elevated faces. Uncertainty can only accumulate along those three elevated dimensions.
+Data is part of the Shannon "message" — the communicated information in a transmission event. Its presence is what brings the spike into existence; a spike whose anchor hasn't plugged into a channel doesn't exist. Each spike is still a full tetrahedron geometrically, with Data as the base plugged into a channel and Meaning, Structure, and Context rising as the three elevated faces. Uncertainty can only accumulate along those three elevated dimensions.
 
 For a boundary with m variables, the formula operates on n = 3m verifiable facets — three per variable (Meaning, Structure, Context). r is how many of those facets have been verified. |B_r| is the Hamming ball cardinality. 2ⁿ is the joint configuration space.
 
@@ -221,7 +221,7 @@ The Dark Fraction Calculator is the canonical reference implementation of this f
 
 Observatrons can mechanize a specific task: *populate this facet given these inputs*. That's an engineering problem with a definition of done — not a vague "reduce uncertainty" goal. An **observatron** is the unit that performs this work: an autonomous state machine stationed at a boundary, watching what crosses, and resolving facets either deterministically or by asking a human.
 
-![Two observatrons across a boundary. Each is a spiky ball — the node surface with tetrahedral spikes sticking out. Each spike has its Data face pressed against the surface (anchoring it) and its Meaning, Structure, and Context faces elevated. Color encodes dark uncertainty: redder means higher δ, more verified means more glowing surface. The cable between them is an emission crossing a boundary. Observatron-1 is 80.2% dark across 20 columns; Observatron-2 is 58.9% dark across 17 columns.](figures/two-observatrons.png)
+![Two observatrons across a boundary. Each is a sphere whose surface is apertured with channels — typed openings, each shaped to receive a specific kind of event. Some channels have anchored spikes rising from them (Data plugged into the channel's opening, with Meaning, Structure, and Context as the three elevated faces); other channels are still empty, waiting for events of that kind. Color encodes dark uncertainty: redder means higher δ, more verified means more glowing surface. The cable between them is an emission crossing a boundary. Observatron-1 is 80.2% dark across 20 channels; Observatron-2 is 58.9% dark across 17 channels.](figures/two-observatrons.png)
 
 ### The Observatron as a Mechanical Platonic Eye
 
@@ -328,7 +328,7 @@ The **Context Graph Protocol** is a syntax that layers over any other syntax —
 
 Of the four facets introduced in Step 1, each plays a distinct role:
 
-- **Data** is the Shannon message — the communicated information in a transmission event. It anchors the spike to the observatron's surface.
+- **Data** is the Shannon message — the communicated information in a transmission event. It plugs into the channel that received the event, anchoring the spike.
 - **Meaning** and **Structure** describe the message statically — what it refers to and how it's encoded.
 - **Context** is different: it's a time-ordered log where external actions leave their trace on the node. If Meaning and Structure describe the message, Context records its collisions with the world. The graph grows by collision.
 
@@ -449,9 +449,7 @@ cgp:/s/<system>/o/<observatron>/c/<channel-name>/<event-n>/a/<anchor>/p/<path>
 |---|---|---|
 | system | `s` | Unit of scope. Instantiates observatrons. |
 | observatron | `o` | Agent stationed at a boundary. The node. |
-| channel + event | `c` | Compound slot. The channel name identifies the kind of event (referencing a definition under `cgp:/root/events/`); the event counter follows, auto-incrementing per channel, per observatron. Written as `c/<channel-name>/<event-n>`. |
-| anchor | `a` | One anchor produced by an event — one file, one message, one API payload. The base of a set of spikes. |
-| path | `p` | One spike — a column, a field, a JSON Pointer target within the anchor. |
+| channel + event | `c` | Compound slot. The channel name identifies the kind of event the observatron's channel aperture is typed to receive (referencing a definition under `cgp:/root/events/`); the event counter follows, auto-incrementing per channel, per observatron. Written as `c/<channel-name>/<event-n>`. |
 
 ### IDs
 
@@ -478,7 +476,7 @@ Every /context facet is a four-column columnar store — `timestamp`, `channel`,
 
 ### Truncation
 
-Any prefix of the slot pattern is a node. Each has its own four facets.
+Any prefix of the slot pattern is either a **node** (only `cgp:/s/<s>/o/<o>`) or a **spike** (everything deeper). Each has its own four facets.
 
 ```
 cgp:/s/0                                       the system
@@ -538,7 +536,7 @@ All five are addressable, all five compose into claims, all five can be compared
 
 The compression isn't a performance optimization. It's the mechanism by which **two independent systems can compare what they saw without sharing any prior schema**. Each system produces URLs that carry their own context. A reader of either system's graph can walk URLs alone to reconstruct most of the picture, dereference `/context` for time, dereference `/data` for values, and compare projections. No lookup table, no translation layer, no schema negotiation.
 
-That's the payoff. Three compressions in the structure, and the output is a protocol where comparability is structural rather than agreed-upon.
+That's the payoff: a protocol where comparability is structural rather than agreed-upon.
 
 ## In Progress
 
@@ -975,20 +973,22 @@ Each facet has a specific internal shape (columnar; see
 
 ## The Relationship, Stated Geometrically
 
-An observatron is a ball. Tetrahedral spikes stick out of its surface. 
-Each spike has one face (the anchor) pressed flat against the ball, and 
-three faces rising away from it.
+An observatron is a sphere whose surface is apertured with channels. 
+Tetrahedral spikes form when events arrive through channels and their 
+anchors plug into the channel's opening. Each spike has one face (the 
+anchor) pressed into a channel, and three faces rising away from it.
 
-- Ball = node = observatron
-- Spike = the thing sticking out of the ball
+- Sphere (with typed channels) = node = observatron
+- Channel = a typed aperture on the sphere's surface
+- Spike = what forms when an event's anchor plugs into a channel
 - Facet = one face of a spike
 
-You cannot have a spike without a node to attach to. You cannot have a 
-facet without a spike to be a face of. The hierarchy is strict:
+You cannot have a spike without a channel to anchor into. You cannot 
+have a facet without a spike to be a face of. The hierarchy is strict:
 
-    observatron (node)
-      └── spike (tetrahedron attached to node's surface)
-            ├── /data      (the anchor, base of the tetrahedron)
+    observatron (node — sphere apertured with channels)
+      └── spike (tetrahedron formed when an event anchors into a channel)
+            ├── /data      (the anchor, plugged into the channel)
             ├── /meaning   (elevated face)
             ├── /structure (elevated face)
             └── /context   (elevated face)
