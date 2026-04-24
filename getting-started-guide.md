@@ -1573,44 +1573,63 @@ extends — depth, breadth, or both.
 
 
 
-
-
-# Translating δ in CGP Terms
+# Translating δ — Formal Grounding
 
 > **Original:** δ is a coarseness measure on a self-observing instrument's equivalence partition over its own configuration space.
 
-## Decoding the sentence
+The sentence compresses the content of Itelman & Kowalski's *Dark Fraction Theorem* (April 2026) into one line. Each phrase maps to a formal object in the paper.
 
-**"self-observing instrument"** → an observatron (it carries facets about its own state, so it can observe itself).
+## Term-by-term decoding
 
-**"own configuration space"** → the 2ⁿ joint space of its n = 3m verifiable facets (Meaning, Structure, Context per variable). For a three-variable boundary, that's 512 possible configurations.
+### "self-observing instrument"
 
-**"equivalence partition"** → the split between the Hamming ball |Bᵣ| (configurations the observatron can reach/distinguish given r verifications) and everything outside it (configurations it cannot tell apart — they're all lumped into one undifferentiated "dark" bucket).
+The boundary itself, operating as a within-boundary diagnostic. In the paper: *"the metric is produced by the instrument, not imposed on the problem"* (§2). The comparison mechanism registers three facets per variable (Meaning, Structure, Context) and emits binary match/mismatch bits. The instrument generates both the coordinate system and the measurements taken within it — hence **self-observing**: no external frame is required, and δ is *"computable from the graph's own structure"* (Formalization Roadmap).
 
-**"coarseness measure"** → how big that outside-the-ball bucket is as a fraction of the whole space. Bigger outside bucket = coarser self-view.
+In the guide's vocabulary this narrows to an observatron (it carries its own `/context` log and can observe itself); in the paper's vocabulary it's the boundary between two coherence units. Either reading is valid — the geometry is the same.
 
-## The formula, read this way
+### "own configuration space"
 
-$$\delta = 1 - \frac{|B_r|}{2^n}$$
+    Ω = {0, 1}³ᵐ,   |Ω| = 2³ᵐ
 
-This is literally the size of the "can't-distinguish" bucket divided by the total space. It quantifies how much of an observatron's own possible configuration space collapses into indistinguishable dark, versus how much it has resolved into reachable, verified configurations.
+The Hamming cube induced by m shared variables × 3 facets each (Theorem 4). The word *own* is load-bearing: the cube isn't a modeling choice laid over a richer continuum, it is *"the instrument's native resolution"* (§1). URLs either match or they don't; the binary encoding is inherent.
 
+### "equivalence partition"
 
-- Verify a facet → r goes up
-- The reachable ball grows → |Bᵣ| increases
-- The dark bucket shrinks → δ drops
+Verification at radius r induces a two-class partition of Ω:
 
-### Endpoints
+| Class | Definition | Size |
+|---|---|---|
+| **Reachable (bright)** | Bᵣ(ω*) = { ω : d_H(ω, ω*) ≤ r } | Σₖ₌₀ʳ C(n, k) |
+| **Unreachable (dark)** | Ω \ Bᵣ(ω*) | 2ⁿ − \|Bᵣ\| |
 
-| State | r | Partition | δ |
+Inside the Hamming ball, verification can distinguish configurations. Outside it, configurations are equivalent from the instrument's point of view — indistinguishable by any within-boundary diagnostic. That is the equivalence relation: *"no within-boundary diagnostic can reach"* (Theorem 4).
+
+At r = n the bright class breaks all the way down into singletons (every configuration is its own class); at r = 0 the bright class contains only ω* itself and the dark class holds everything else. This is the structural move that connects δ to its formal neighbors — bisimulation, observational equivalence, epistemic-logic partition fineness.
+
+### "coarseness measure"
+
+The size of the undifferentiated dark class as a fraction of Ω:
+
+    δ(n, r) = 1 − |Bᵣ| / 2ⁿ = 1 − (1 / 2ⁿ) · Σₖ₌₀ʳ C(n, k)
+
+A partition is **coarse** when its classes are large and lumpy; **fine** when they are small and numerous. δ measures coarseness by reporting the mass of the one big lumpy class (the dark one). Verify another facet and the bright class gains C(n, r+1) members (Corollary 6 — marginal return); the dark class loses the same count; the partition becomes strictly finer.
+
+## Endpoint behavior
+
+| State | r | Partition shape | δ |
 |---|---|---|---|
-| Fully verified | r = n | Maximally fine — every configuration is its own class | 0 |
-| Fully dark | r = 0 | Maximally coarse — nearly everything is in one dark class | ≈ 1 |
+| Collapsed uncertainty | r = n | Every configuration is its own class | 0 |
+| Dark uncertainty, maximal | r = 0 | Only ω* is distinguished; rest is one dark class | 1 − 2⁻ⁿ |
+| Null uncertainty | (no facets registered) | Partition undefined — no axes exist | undefined |
 
+The paper's three-state vocabulary (null → dark → collapsed) corresponds exactly to the partition's life cycle: no partition exists, then a coarse partition, then a fine one.
 
+The δ at r = 0 is exact, not asymptotic: 1 − 2⁻ⁿ. At m = 1 that's 7/8 = 0.875 (the guide's napkin example); at m = 3 it's 511/512 ≈ 0.998; as n grows it approaches 1 but never equals it.
 
+## What the one-line sentence captures that the formula alone does not
 
+The formula δ = 1 − |Bᵣ| / 2ⁿ is a computation. The sentence names *what kind of object* that computation produces: a **coarseness measure on an equivalence partition**, built by an instrument out of its own observations. That framing connects δ to its formal neighbors and makes explicit why δ is not Shannon entropy: entropy measures uncertainty *within* a known frame; δ measures how much the frame itself has been resolved.
 
+## Plain English
 
-
-
+**δ tells you how blurry the boundary's view of itself is — what fraction of its own configuration space collapses into one undifferentiated dark class because verification hasn't reached it yet.** Verify a facet, the dark class shrinks, the partition gets finer, δ drops.
