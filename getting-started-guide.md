@@ -223,6 +223,99 @@ Observatrons can mechanize a specific task: *populate this facet given these inp
 
 ![Two observatrons across a boundary. Each is a spiky ball — the node surface with tetrahedral spikes sticking out. Each spike has its Data face pressed against the surface (anchoring it) and its Meaning, Structure, and Context faces elevated. Color encodes dark uncertainty: redder means higher δ, more verified means more glowing surface. The cable between them is an emission crossing a boundary. Observatron-1 is 80.2% dark across 20 columns; Observatron-2 is 58.9% dark across 17 columns.](figures/two-observatrons.png)
 
+### The Observatron as a Mechanical Platonic Eye
+
+An observatron is not a featureless blob that events collide with. It's 
+a **sphere whose surface is apertured with channels** — typed openings, 
+each a URL under `cgp:/root/events/`, each shaped to receive a specific 
+kind of event. The observatron is a precision instrument stationed in 
+CGP space. Its channels are what it can see.
+
+This is the geometric picture the protocol is built on:
+
+- The **sphere** is the observatron — the node, stationed at a boundary.
+- Each **channel** is a typed aperture on the sphere's surface, 
+  registered at a URL under `cgp:/root/events/`, shaped to receive 
+  events of one kind. Channel and aperture are the same thing: the 
+  channel's URL names it by role (the kind of event), its shape on 
+  the surface names it by geometry.
+- An **event** is an arrival through a channel. The event's **anchor** 
+  (its `/data`) plugs into the channel's opening.
+- A **spike** is the tetrahedron that forms when an anchor plugs into 
+  a channel. Anchor at the base (pressed into the aperture); Meaning, 
+  Structure, and Context rising from the anchor as the three elevated 
+  faces.
+
+An observatron with no events yet isn't empty — it's a sphere whose 
+surface already carries a set of typed channels, waiting. Events 
+transmit through those channels and anchor spikes. That's all 
+observation is, geometrically.
+
+### What Changes With This Picture — Nothing; What Sharpens — Everything
+
+Every existing CGP term keeps its meaning. The geometric picture just 
+adds causal clarity about how those meanings fit together:
+
+| Term | Means | And geometrically |
+|---|---|---|
+| **Observatron** | The node stationed at a boundary | A sphere whose surface carries typed channels, waiting for events |
+| **Channel** | A URL under `cgp:/root/events/` identifying the kind of event | A typed aperture on the observatron's surface, shaped to receive events of that kind |
+| **Event** | A firing in a channel | An arrival through the channel that anchors a spike |
+| **Anchor** | `/data`'s single row | The part of the spike that plugs into the channel's opening |
+| **Spike** | A tetrahedron attached to the observatron | What forms when an event's anchor plugs into a channel |
+
+Three things snap into place under this picture:
+
+**1. Why `/data` has exactly one row.** The anchor is the plug that 
+fits into the channel. A spike with two anchors would try to fit into 
+two channels at once; a spike with zero anchors would float, 
+unattached. One channel, one plug, one anchor. The single-row rule 
+isn't a storage convention — it's geometric necessity.
+
+**2. Why the `channel` column in a claim is load-bearing.** The 
+channel URL in a claim isn't metadata *about* the event. It names 
+**which aperture on the observatron received this transmission**. It 
+is coordinates. When two observatrons produce claims with the same 
+channel, it means events of the same kind entered both through 
+matching apertures — which is why their claims can be compared without 
+schema negotiation.
+
+**3. Why observation is bounded.** An observatron is a Platonic eye, 
+not an omnivore. It has a specific set of channels; it sees the kinds 
+of events those channels are shaped to receive. Events of kinds for 
+which the observatron has no channel don't register. This is a feature 
+— an observatron's channel set *is* its job description.
+
+### One Implication to Decide
+
+The geometric picture makes a question that was implicit now explicit: 
+does an observatron declare its channels up front, or does it accept 
+any channel registered anywhere in the graph?
+
+- **Declared channels.** The observatron binds to a specific finite 
+  set of channels at instantiation time. Events of other kinds don't 
+  register. This gives you compile-time validation ("this observatron 
+  can receive these kinds of events"), a smaller and more defensible 
+  claim space, and a clean answer to "what is this observatron *for*?" 
+  — look at its channel set.
+
+- **Open sphere.** Any channel in `cgp:/root/events/` can fire through 
+  any observatron. The surface's channels materialize as events 
+  arrive, rather than being present from the start.
+
+The current MVP runs as an open sphere (the drag-and-drop observatron 
+mints `c/state-change/<n>` without declaring it up front). Declared 
+channels are a natural extension — an observatron's `/structure` 
+facet would list the channel URLs it receives, and the runtime would 
+reject events on unrecognized channels. Worth flagging as a design 
+direction for v2.
+
+In our **Getting Started** example, we will focus on Observatrons across the entire stack — minimal, but end-to-end:
+
+- **UX**: The drag & drop area in HTML
+- **API**: Back-end service layer
+- **SQL**: Intent mapping to query slots
+
 In our **Getting Started** example, we will focus on Observatrons across the entire stack — minimal, but end-to-end:
 
 - **UX**: The drag & drop area in HTML
