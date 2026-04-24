@@ -96,6 +96,10 @@ outside the helper is a bug.
 
 ## Step 2 — Score Dark Uncertainty in Real-Time (δ → "Dark Fraction Score")
 
+### Does Your AI Need Reading Glasses for Arbitrary Data?
+
+**δ** (*Dark Fraction Score*) tells you how blurry an observatron's view of itself is — what fraction of its own possible states it has failed to pull apart into distinct, verified configurations.
+
 From a philosophical perspective, the geometry and the protocol are identical, and Unicode expression of math as the highest abstraction and precision layer is canonical.
 
 With shared geometry, we can compute dark fraction:
@@ -316,12 +320,6 @@ In our **Getting Started** example, we will focus on Observatrons across the ent
 - **API**: Back-end service layer
 - **SQL**: Intent mapping to query slots
 
-In our **Getting Started** example, we will focus on Observatrons across the entire stack — minimal, but end-to-end:
-
-- **UX**: The drag & drop area in HTML
-- **API**: Back-end service layer
-- **SQL**: Intent mapping to query slots
-
 
 ## The Context Graph Protocol - Overview
 The **Context Graph Protocol** is a syntax that layers over any other syntax — HTML, system prompts, CSV, JSON, SQL, plain text — to bind addressable units across systems to a shared four-facet geometry.
@@ -450,6 +448,8 @@ cgp:/s/<system>/o/<observatron>/c/<channel-name>/<event-n>/a/<anchor>/p/<path>
 | system | `s` | Unit of scope. Instantiates observatrons. |
 | observatron | `o` | Agent stationed at a boundary. The node. |
 | channel + event | `c` | Compound slot. The channel name identifies the kind of event the observatron's channel aperture is typed to receive (referencing a definition under `cgp:/root/events/`); the event counter follows, auto-incrementing per channel, per observatron. Written as `c/<channel-name>/<event-n>`. |
+| anchor | `a` | One anchor produced by an event — one file, one message, one API payload. It plugs into the channel that received the event; paths beneath it are further spikes. |
+| path | `p` | One spike — a column, a field, a JSON Pointer target within the anchor. |
 
 ### IDs
 
@@ -901,7 +901,7 @@ Any of these can be addressed in subsequent increments. The MVP's job is to make
 
 ---
 
-## Reference for Implementation
+# Reference for Implementation
 
 
 This document defines the core terms of the Context Graph Protocol. 
@@ -1344,11 +1344,8 @@ referencing stages, state machines referencing transitions — gets the
 same four systems for free by making the named kinds themselves into 
 spikes.
 
-Here's a drop-in section that covers formulas-as-spikes (with the `/context`-is-the-execution-trace move), reification, and the stepwise audit payoff. Written as one coherent section you can paste in as-is and restructure later.
 
-Where it goes: I'd put this right after the **Canonical Claim Form** section and before **In Progress** — it's protocol-level content that belongs with the core spec, not in the implementation appendix. Keeps the dev-facing narrative flowing from "here's what a claim is" → "here's what formulas and reification look like as claims" → "here's the MVP."
 
-```markdown
 ## Formulas and Reification
 
 The canonical claim form handles two things most protocols treat as 
@@ -1572,4 +1569,48 @@ names what the claim is about, and observatrons emit whatever claims
 they need. No central coordinator arbitrates. No schema dictates which 
 patterns may occur. The graph grows wherever observation actually 
 extends — depth, breadth, or both.
-```
+
+
+
+
+
+
+# Translating δ in CGP Terms
+
+> **Original:** δ is a coarseness measure on a self-observing instrument's equivalence partition over its own configuration space.
+
+## Decoding the sentence
+
+**"self-observing instrument"** → an observatron (it carries facets about its own state, so it can observe itself).
+
+**"own configuration space"** → the 2ⁿ joint space of its n = 3m verifiable facets (Meaning, Structure, Context per variable). For a three-variable boundary, that's 512 possible configurations.
+
+**"equivalence partition"** → the split between the Hamming ball |Bᵣ| (configurations the observatron can reach/distinguish given r verifications) and everything outside it (configurations it cannot tell apart — they're all lumped into one undifferentiated "dark" bucket).
+
+**"coarseness measure"** → how big that outside-the-ball bucket is as a fraction of the whole space. Bigger outside bucket = coarser self-view.
+
+## The formula, read this way
+
+$$\delta = 1 - \frac{|B_r|}{2^n}$$
+
+This is literally the size of the "can't-distinguish" bucket divided by the total space. It quantifies how much of an observatron's own possible configuration space collapses into indistinguishable dark, versus how much it has resolved into reachable, verified configurations.
+
+
+- Verify a facet → r goes up
+- The reachable ball grows → |Bᵣ| increases
+- The dark bucket shrinks → δ drops
+
+### Endpoints
+
+| State | r | Partition | δ |
+|---|---|---|---|
+| Fully verified | r = n | Maximally fine — every configuration is its own class | 0 |
+| Fully dark | r = 0 | Maximally coarse — nearly everything is in one dark class | ≈ 1 |
+
+
+
+
+
+
+
+
