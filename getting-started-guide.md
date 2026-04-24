@@ -459,6 +459,9 @@ cgp:/s/<system>/o/<observatron>/c/<channel-name>/<event-n>/a/<anchor>/p/<path>
 
 **Event, anchor, and path IDs are auto-generated integers starting at 0**, scoped to their parent. Counters reset per parent: each channel numbers its events from `0` within one observatron; each event numbers its anchors from `0`; each anchor numbers its paths from `0`.
 
+### "Spacetime" as an analogy for "channel_events", where channels and events are together
+The compound slot c/<channel-name>/<event-n> is a coordinate pair, not a hierarchy. The channel names what kind of event this is — a spatial coordinate on the observatron's surface. The event-n names which occurrence this is — a temporal coordinate within that channel's local history. The two are independent: a single user gesture can produce simultaneous events on different channels (sharing wall-clock time but located at different positions), and a single channel accumulates events over time (sharing position but at different times). The URL appends event-n directly to the channel name without a prefix to mark this — every other slot uses a single-letter prefix (s/, o/, a/, p/) because it introduces a new coordinate type; event-n is omitted because it shares the channel's coordinate type, just shifted along the time axis.
+
 ### Facets
 
 Every URL has four facets, written as terminal path segments:
