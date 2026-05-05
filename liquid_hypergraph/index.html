@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <title>Liquid Hypergraph</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/layout.css" />
+  <link rel="stylesheet" href="css/tree.css" />
+  <link rel="stylesheet" href="css/facet-view.css" />
+  <link rel="stylesheet" href="css/analytics.css" />
+</head>
+<body>
+  <script src="../sidebar.js" data-active="liquid_hypergraph" data-accent="#F59E0B"></script>
+
+  <!-- Header -->
+  <div class="lh-header">
+    <h1>Liquid Hypergraph</h1>
+    <p>Context Graph Protocol &mdash; URL tree, facets, and delta analytics</p>
+  </div>
+
+  <!-- Three-column layout -->
+  <div class="lh-container">
+    <div class="lh-panel lh-panel--tree" id="panelTree"></div>
+    <div class="lh-resizer" id="resizerLeft"></div>
+    <div class="lh-panel lh-panel--facets" id="panelFacets"></div>
+    <div class="lh-resizer" id="resizerRight"></div>
+    <div class="lh-panel lh-panel--analytics" id="panelAnalytics"></div>
+  </div>
+
+  <script type="module">
+    import { CgpFetchBackend }  from '../js/cgp/CgpFetchBackend.js';
+    import { CgpResolver }      from '../js/cgp/CgpResolver.js';
+    import { CGP_KNOWN_PATHS }  from '../js/cgp/cgp-known-paths.js';
+    import { CgpTreeView }      from './js/tree-view.js';
+    import { CgpFacetView }     from './js/facet-view.js';
+    import { CgpAnalyticsView } from './js/analytics-view.js';
+
+    // --- Initialize resolver (same pattern as demo) ---
+    const backend  = new CgpFetchBackend('../cgp/', CGP_KNOWN_PATHS);
+    const resolver = new CgpResolver(backend);
+    await resolver.init();
+
+    // --- Mount views ---
+    const treeView      = new CgpTreeView(resolver, document.getElementById('panelTree'));
+    const facetView     = new CgpFacetView(resolver, document.getElementById('panelFacets'));
+    const analyticsView = new CgpAnalyticsView(resolver, document.getElementById('panelAnalytics'));
+
+    // --- Wire events ---
+    document.addEventListener('cgp-url-selected', (e) => {
+      treeView.selectUrl(e.detail.url);
+      facetView.select(e.detail.url);
+      analyticsView.selectUrl(e.detail.url);
+    });
+
+    document.addEventListener('cgp-state-change', (e) => {
+      for (const [url, facets] of Object.entries(e.detail.state)) {
+        resolver._cache.set(url, { url, facets });
+      }
+      treeView.render();
+      analyticsView.refreshGraphSummary();
+    });
+
+    // --- BroadcastChannel for cross-tab sync ---
+    const bc = new BroadcastChannel('cgp-state');
+    bc.onmessage = (msg) => {
+      if (msg.data?.type === 'cgp-state-change') {
+        for (const [url, facets] of Object.entries(msg.data.state)) {
+          resolver._cache.set(url, { url, facets });
+        }
+        document.dispatchEvent(new CustomEvent('cgp-state-change', {
+          bubbles: true,
+          detail: { event: msg.data.event, state: msg.data.state }
+        }));
+      }
+    };
+
+    // --- Resizer logic (same pattern as demo) ---
+    const panelTree      = document.getElementById('panelTree');
+    const resizerLeft    = document.getElementById('resizerLeft');
+    const panelFacets    = document.getElementById('panelFacets');
+    const resizerRight   = document.getElementById('resizerRight');
+    const panelAnalytics = document.getElementById('panelAnalytics');
+    const container      = panelTree.parentElement;
+    let activeResizer    = null;
+
+    function startDrag(resizer, e) {
+      e.preventDefault();
+      activeResizer = resizer;
+      resizer.classList.add('active');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    resizerLeft.addEventListener('mousedown',  (e) => startDrag(resizerLeft, e));
+    resizerRight.addEventListener('mousedown', (e) => startDrag(resizerRight, e));
+
+    document.addEventListener('mousemove', (e) => {
+      if (!activeResizer) return;
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+
+      if (activeResizer === resizerLeft) {
+        const w = Math.max(180, Math.min(x, rect.width - 600));
+        panelTree.style.width = w + 'px';
+      } else {
+        const treeW = panelTree.getBoundingClientRect().width + 6;
+        const available = rect.width - treeW - 6;
+        let facetsW = x - treeW;
+        facetsW = Math.max(300, Math.min(facetsW, available - 260));
+        panelFacets.style.flex = 'none';
+        panelAnalytics.style.flex = 'none';
+        panelFacets.style.width = facetsW + 'px';
+        panelAnalytics.style.width = (available - facetsW) + 'px';
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!activeResizer) return;
+      activeResizer.classList.remove('active');
+      activeResizer = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+
+    // --- Initial render ---
+    treeView.render();
+    analyticsView.refreshGraphSummary();
+  </script>
+</body>
+</html>

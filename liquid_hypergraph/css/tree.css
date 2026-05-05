@@ -1,0 +1,102 @@
+/* --- Tree view --- */
+.lh-tree__branch {
+  margin-bottom: 2px;
+}
+.lh-tree__branch > summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #888;
+  padding: 6px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  user-select: none;
+}
+.lh-tree__branch > summary:hover {
+  background: #f0f0f0;
+}
+.lh-tree__branch > summary::-webkit-details-marker {
+  display: none;
+}
+.lh-tree__branch > summary::before {
+  content: '\25B6';
+  font-size: 8px;
+  color: #aaa;
+  transition: transform 0.15s;
+  display: inline-block;
+}
+.lh-tree__branch[open] > summary::before {
+  transform: rotate(90deg);
+}
+
+/* --- Tree node --- */
+.lh-tree__node {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: background 0.1s;
+  text-transform: none;
+}
+.lh-tree__node:hover {
+  background: #f0f0f0;
+}
+.lh-tree__node--selected {
+  background: rgba(245, 158, 11, 0.1);
+  color: #F59E0B;
+  border-left: 3px solid #F59E0B;
+  border-radius: 0 6px 6px 0;
+  font-weight: 700;
+}
+
+/* Depth indentation via data attribute */
+.lh-tree__node[data-depth="1"] { padding-left: 20px; }
+.lh-tree__node[data-depth="2"] { padding-left: 32px; }
+.lh-tree__node[data-depth="3"] { padding-left: 44px; }
+.lh-tree__node[data-depth="4"] { padding-left: 56px; }
+.lh-tree__node[data-depth="5"] { padding-left: 68px; }
+.lh-tree__node[data-depth="6"] { padding-left: 80px; }
+.lh-tree__node[data-depth="7"] { padding-left: 92px; }
+.lh-tree__node[data-depth="8"] { padding-left: 104px; }
+.lh-tree__node[data-depth="9"] { padding-left: 116px; }
+
+/* --- Badge --- */
+.lh-tree__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 16px;
+  padding: 0 5px;
+  font-size: 8px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.lh-tree__badge--system      { background: rgba(245,158,11,0.15); color: #333; }
+.lh-tree__badge--observatron { background: rgba(78,205,196,0.15); color: #333; }
+.lh-tree__badge--event       { background: rgba(137,180,250,0.15); color: #333; }
+.lh-tree__badge--anchor      { background: rgba(167,139,250,0.15); color: #333; }
+.lh-tree__badge--path        { background: rgba(52,211,153,0.15); color: #333; }
+.lh-tree__badge--protocol    { background: rgba(108,112,134,0.15); color: #333; }
+.lh-tree__badge--component   { background: rgba(250,179,135,0.15); color: #333; }
+
+/* Node label text */
+.lh-tree__label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}

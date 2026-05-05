@@ -1,0 +1,93 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  background: #f5f5f5;
+  font-family: 'JetBrains Mono', monospace;
+  color: #333;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* --- Header --- */
+.lh-header {
+  padding: 20px 24px 16px 72px;
+  border-bottom: 1px solid #e0e0e0;
+  background: #fff;
+}
+.lh-header h1 { font-size: 22px; font-weight: 700; color: #F59E0B; }
+.lh-header p  { font-size: 12px; color: #888; margin-top: 4px; }
+
+/* --- Three-column layout --- */
+.lh-container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* Panels */
+.lh-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: auto;
+  padding: 16px;
+}
+
+.lh-panel--tree {
+  width: 280px;
+  min-width: 180px;
+  background: #fafafa;
+  border-right: 1px solid #e0e0e0;
+}
+
+.lh-panel--facets {
+  flex: 1;
+  min-width: 300px;
+  background: #fff;
+}
+
+.lh-panel--analytics {
+  width: 340px;
+  min-width: 260px;
+  background: #1e1e2e;
+  color: #cdd6f4;
+}
+
+/* --- Resizer (matches demo) --- */
+.lh-resizer {
+  width: 1px;
+  cursor: col-resize;
+  background: #e0e0e0;
+  flex-shrink: 0;
+  position: relative;
+}
+/* Invisible wider hit-area */
+.lh-resizer::before {
+  content: '';
+  position: absolute;
+  top: 0; bottom: 0;
+  left: -4px;
+  width: 9px;
+}
+/* Nub handle */
+.lh-resizer::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: 6px; height: 32px;
+  border-radius: 3px;
+  background: #ccc;
+  transition: background .15s;
+}
+.lh-resizer:hover::after, .lh-resizer.active::after { background: #F59E0B; }
+.lh-resizer:hover, .lh-resizer.active { background: #F59E0B; }
+
+/* --- Panel section labels --- */
+.lh-panel-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: #999;
+  margin-bottom: 12px;
+}

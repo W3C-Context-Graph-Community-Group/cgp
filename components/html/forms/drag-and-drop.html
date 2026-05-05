@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CGP Drag-and-Drop Demo</title>
+  <style>
+    .drop-zone {
+      width: 320px;
+      height: 160px;
+      border: 2px dashed #888;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: sans-serif;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+
+  <div cgp-id="cgp:/r/components/html/forms/drag-and-drop.md"
+       cgp-system-id="0"
+       cgp-observatron-id="0"
+       cgp-target=".drop-zone"
+       cgp-intent='{"cgp-policy":"cgp:/r/policies/parse-csv-headers.md"}'>
+    <div class="drop-zone">Drop CSV here</div>
+  </div>
+
+  <script type="module" src="../../../lib/cgp-runtime/runtime.js"></script>
+
+</body>
+</html>
