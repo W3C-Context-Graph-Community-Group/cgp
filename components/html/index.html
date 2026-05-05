@@ -1,0 +1,585 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="../../favicon.svg" />
+  <title>HTML - CSV Drag and Drop</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #f5f5f5; font-family: 'JetBrains Mono', monospace; color: #333; height: 100vh; display: flex; flex-direction: column; }
+
+    /* --- Header --- */
+    .page-header {
+      padding: 20px 24px 16px 72px;
+      border-bottom: 1px solid #e0e0e0;
+      background: #fff;
+    }
+    .page-header h1 { font-size: 22px; font-weight: 700; color: #F59E0B; }
+    .page-header p  { font-size: 12px; color: #888; margin-top: 4px; }
+
+    /* --- Split layout --- */
+    .split-container {
+      flex: 1; display: flex; overflow: hidden;
+    }
+
+    /* Left panel — component list */
+    .panel-new-left {
+      width: 250px; min-width: 150px;
+      background: #fafafa;
+      border-right: 1px solid #e0e0e0;
+      display: flex; flex-direction: column;
+      padding: 16px;
+      overflow: auto;
+    }
+    .panel-new-left .panel-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: #999; margin-bottom: 12px;
+    }
+
+    /* Middle panel — column layout for control row + body + code preview */
+    .panel-left {
+      flex: 1; min-width: 200px;
+      background: #fff;
+      display: flex; flex-direction: column; align-items: stretch;
+      padding: 0;
+      overflow: auto;
+    }
+
+    /* Control row at top of middle panel */
+    .control-row {
+      display: flex; justify-content: flex-end; align-items: center;
+      padding: 8px 16px;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .control-row__toggle {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px; font-weight: 700;
+      padding: 4px 14px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background .15s, color .15s, border-color .15s;
+    }
+    .control-row__toggle--on {
+      background: #F59E0B; color: #fff; border-color: #F59E0B;
+    }
+    .control-row__toggle--off {
+      background: #aaa; color: #fff; border-color: #aaa;
+    }
+
+    /* Body area — centered drop zone */
+    .panel-left__body {
+      flex: 1;
+      display: flex; align-items: center; justify-content: center;
+      padding: 32px;
+    }
+
+    /* Code preview at bottom of middle panel */
+    .code-preview {
+      background: #1e1e2e;
+      border-top: 1px solid #e0e0e0;
+      padding: 12px 16px;
+      overflow: auto;
+      max-height: 200px;
+    }
+    .code-preview pre {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px; line-height: 1.6;
+      color: #cdd6f4;
+      white-space: pre-wrap;
+      word-break: break-word;
+      margin: 0;
+    }
+
+    /* HTML syntax highlighting */
+    .hl-tag    { color: #89b4fa; }
+    .hl-attr   { color: #f9e2af; }
+    .hl-string { color: #a6e3a1; }
+    .hl-punct  { color: #6c7086; }
+
+    /* Resizer */
+    .resizer {
+      width: 1px; cursor: col-resize;
+      background: #e0e0e0;
+      flex-shrink: 0;
+      position: relative;
+    }
+    /* Invisible wider hit-area */
+    .resizer::before {
+      content: '';
+      position: absolute;
+      top: 0; bottom: 0;
+      left: -4px;
+      width: 9px;
+    }
+    /* Nub handle */
+    .resizer::after {
+      content: '';
+      position: absolute;
+      top: 50%; left: 50%;
+      transform: translate(-50%, -50%);
+      width: 6px; height: 32px;
+      border-radius: 3px;
+      background: #ccc;
+      transition: background .15s;
+    }
+    .resizer:hover::after, .resizer.active::after { background: #F59E0B; }
+    .resizer:hover, .resizer.active { background: #F59E0B; }
+
+    /* Right panel – dark theme */
+    .panel-right {
+      flex: 1; min-width: 200px;
+      background: #1e1e2e;
+      color: #cdd6f4;
+      padding: 32px;
+      overflow: auto;
+      display: flex; flex-direction: column;
+    }
+    .panel-right .panel-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: #6c7086; margin-bottom: 16px;
+    }
+
+    /* --- Drag & drop zone --- */
+    .drop-zone {
+      width: 280px; height: 180px;
+      border: 2px dashed #ccc;
+      border-radius: 12px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 8px;
+      color: #999; font-size: 13px;
+      transition: border-color .2s, background .2s;
+      cursor: default;
+    }
+    .drop-zone.over {
+      border-color: #F59E0B;
+      background: #F59E0B0a;
+    }
+    .drop-zone-icon { font-size: 32px; }
+    .drop-zone-label { font-size: 11px; color: #bbb; }
+
+    /* --- JSON syntax highlighting --- */
+    pre.json-view {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 14px;
+      line-height: 1.8;
+      white-space: pre-wrap;
+      word-break: break-word;
+      flex: 1;
+    }
+    .json-key    { color: #89b4fa; }
+    .json-string { color: #a6e3a1; }
+    .json-number { color: #fab387; }
+    .json-brace  { color: #6c7086; }
+
+    /* --- Button container --- */
+    #buttonContainer {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+    #buttonContainer button {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      padding: 4px 12px;
+      border: 1px solid #45475a;
+      border-radius: 6px;
+      background: #313244;
+      color: #cdd6f4;
+      cursor: pointer;
+      transition: background .15s, border-color .15s;
+    }
+    #buttonContainer button:hover {
+      background: #45475a;
+      border-color: #585b70;
+    }
+    #buttonContainer button.success {
+      background: #1e5a2e;
+      border-color: #a6e3a1;
+      color: #a6e3a1;
+    }
+
+    /* --- Instance list rows --- */
+    .instance-list__row {
+      display: flex; align-items: flex-start; gap: 10px;
+      padding: 10px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .instance-list__index {
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 24px; height: 24px;
+      border-radius: 6px;
+      background: #F59E0B; color: #fff;
+      font-size: 11px; font-weight: 700;
+      flex-shrink: 0;
+    }
+    .instance-list__info {
+      display: flex; flex-direction: column; gap: 2px;
+      min-width: 0;
+    }
+    .instance-list__url {
+      font-size: 11px; font-weight: 700; color: #333;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .instance-list__type {
+      font-size: 10px; color: #888;
+      overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .instance-list__attrs {
+      display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;
+    }
+    .instance-list__chip {
+      font-size: 9px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: #f0f0f0; color: #666;
+      white-space: nowrap;
+    }
+
+    /* Layout transparency for the custom element */
+    cgp-html-forms-drag-and-drop { display: contents; }
+
+    /* --- Conformance panel --- */
+    .conformance-panel {
+      border-top: 1px solid #45475a;
+      margin-top: 16px;
+      padding-top: 12px;
+    }
+    .conformance-panel .panel-label {
+      font-size: 11px; text-transform: uppercase; letter-spacing: 1px;
+      color: #6c7086; margin-bottom: 10px;
+    }
+    .conformance-row {
+      display: flex; align-items: center; gap: 8px;
+      padding: 6px 0;
+      font-size: 12px;
+    }
+    .conformance-status { font-size: 14px; flex-shrink: 0; }
+    .conformance-status.pending { color: #6c7086; }
+    .conformance-status.pass    { color: #a6e3a1; }
+    .conformance-status.fail    { color: #f38ba8; }
+    .conformance-label { font-weight: 700; color: #cdd6f4; }
+    .conformance-detail { font-size: 10px; color: #6c7086; margin-left: auto; }
+    .conformance-detail a { color: #89b4fa; cursor: pointer; text-decoration: underline; }
+    .conformance-diff {
+      display: none;
+      font-size: 10px;
+      color: #f38ba8;
+      padding: 6px 0 2px 22px;
+      line-height: 1.6;
+    }
+    .conformance-diff.open { display: block; }
+  </style>
+</head>
+<body>
+  <script src="../../js/nav/sidebar.js" data-active="components" data-accent="#F59E0B"></script>
+
+  <!-- Header -->
+  <div class="page-header">
+    <h1>HTML</h1>
+    <p>Hello world &mdash; drag &amp; drop playground</p>
+  </div>
+
+  <!-- Split panels -->
+  <div class="split-container">
+    <!-- Left column -->
+    <div class="panel-new-left" id="panelNewLeft">
+      <div class="panel-label">Components</div>
+      <div id="instanceList"></div>
+    </div>
+
+    <!-- Resizer between left column and drag & drop -->
+    <div class="resizer" id="resizerLeft"></div>
+
+    <!-- Middle: light theme, drag & drop -->
+    <div class="panel-left" id="panelLeft">
+      <div class="control-row">
+        <button id="cgpToggle" class="control-row__toggle control-row__toggle--on">CGP ON</button>
+      </div>
+      <div class="panel-left__body" id="panelLeftBody">
+      </div>
+      <div class="code-preview">
+        <pre id="codePreviewPre"></pre>
+      </div>
+    </div>
+
+    <!-- Resizer between drag & drop and JSON -->
+    <div class="resizer" id="resizerRight"></div>
+
+    <!-- Right: dark theme, JSON state -->
+    <div class="panel-right" id="panelRight">
+      <div id="buttonContainer">
+        <button id="copyBtn" onclick="copyState()">Copy</button>
+      </div>
+      <div class="panel-label">State</div>
+      <pre class="json-view" id="jsonView"></pre>
+      <div id="conformancePanel" class="conformance-panel">
+        <div class="panel-label">Conformance</div>
+        <div class="conformance-row" id="conformPageLoad">
+          <span class="conformance-status pending">&#8987;</span>
+          <span class="conformance-label">PAGE LOAD</span>
+          <span class="conformance-detail"></span>
+        </div>
+        <div class="conformance-diff" id="conformPageLoadDiff"></div>
+        <div class="conformance-row" id="conformPostDrop">
+          <span class="conformance-status pending">&#8987;</span>
+          <span class="conformance-label">POST DROP</span>
+          <span class="conformance-detail"></span>
+        </div>
+        <div class="conformance-diff" id="conformPostDropDiff"></div>
+      </div>
+    </div>
+  </div>
+
+  <script type="module">
+    import { CgpFetchBackend }            from '../../js/cgp/CgpFetchBackend.js';
+    import { CgpResolver }                from '../../js/cgp/CgpResolver.js';
+    import { CGP_KNOWN_PATHS }            from '../../js/cgp/cgp-known-paths.js';
+    import { ComponentTypeRegistry }      from '../../js/cgp/ComponentTypeRegistry.js';
+    import { ComponentInstanceRegistry }  from '../../js/cgp/ComponentInstanceRegistry.js';
+    import { ComponentInstanceListView }  from '../../js/cgp/ComponentInstanceListView.js';
+    import { ComponentTypeListView }      from '../../js/cgp/ComponentTypeListView.js';
+    import { EventBus }                   from '../../lib/event-bus/client.js';
+    import { compareState }               from '../../js/cgp/conformance.js';
+
+    // --- Initialize CGP resolver ---
+    const backend  = new CgpFetchBackend('../../cgp/', CGP_KNOWN_PATHS);
+    const resolver = new CgpResolver(backend);
+    await resolver.init();
+    window.__cgpResolver = resolver;
+
+    const bus = new EventBus();
+    const VARS_URL = 'cgp:/s/calc/o/0/c/variables-changed';
+
+    // --- Registries + list view ---
+    const typeRegistry     = new ComponentTypeRegistry({ resolver });
+    const instanceRegistry = new ComponentInstanceRegistry({ resolver });
+    const listView         = new ComponentInstanceListView(instanceRegistry);
+
+    // Load type definitions (near no-op — resolver already loaded everything)
+    await typeRegistry.load('../../');
+    const typeListView = new ComponentTypeListView(typeRegistry);
+
+    // --- JSON state rendering (registered before element upgrade to catch initial state) ---
+    let currentState = {};
+    function renderJson(obj) {
+      currentState = obj;
+      const raw = JSON.stringify(obj, null, 2);
+      const html = raw
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/"([^"]+)"(?=\s*:)/g, '<span class="json-key">"$1"</span>')
+        .replace(/:\s*"([^"]*?)"/g, ': <span class="json-string">"$1"</span>')
+        .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
+        .replace(/[{}\[\]]/g, '<span class="json-brace">$&</span>');
+      document.getElementById('jsonView').innerHTML = html;
+    }
+
+    // --- Conformance fixtures & checker ---
+    const [expectedPageLoad, expectedPostDrop] = await Promise.all([
+      fetch('../../tests/demo/expected-page-load.json').then(r => r.json()),
+      fetch('../../tests/demo/expected-post-drop.json').then(r => r.json()),
+    ]);
+
+    let stateChangeCount = 0;
+
+    function updateRow(rowEl, diffEl, result) {
+      const icon = rowEl.querySelector('.conformance-status');
+      const detail = rowEl.querySelector('.conformance-detail');
+      icon.classList.remove('pending', 'pass', 'fail');
+      if (result.match) {
+        icon.textContent = '\u2713';
+        icon.classList.add('pass');
+        detail.textContent = '';
+        diffEl.classList.remove('open');
+        diffEl.textContent = '';
+      } else {
+        icon.textContent = '\u2717';
+        icon.classList.add('fail');
+        detail.innerHTML = '<a class="conformance-toggle">show diff</a>';
+        const lines = result.diffs.map(d => {
+          if (!d.facet) return `${d.url}: ${d.actual}`;
+          return `${d.url} ${d.facet}.${d.key}: expected ${d.expected}, got ${d.actual}`;
+        });
+        diffEl.textContent = lines.join('\n');
+        detail.querySelector('.conformance-toggle').addEventListener('click', () => {
+          diffEl.classList.toggle('open');
+        });
+      }
+    }
+
+    document.addEventListener('cgp-state-change', (e) => {
+      renderJson(e.detail.state);
+
+      // --- Conformance checks ---
+      stateChangeCount++;
+      const pageLoadResult = compareState(e.detail.state, expectedPageLoad);
+      updateRow(
+        document.getElementById('conformPageLoad'),
+        document.getElementById('conformPageLoadDiff'),
+        pageLoadResult
+      );
+      if (stateChangeCount > 1) {
+        const postDropResult = compareState(e.detail.state, expectedPostDrop);
+        updateRow(
+          document.getElementById('conformPostDrop'),
+          document.getElementById('conformPostDropDiff'),
+          postDropResult
+        );
+      }
+
+      // Extract column names from paths and emit to calculator
+      const state = e.detail.state;
+      const variables = [];
+      for (const [url, facets] of Object.entries(state)) {
+        if (url.includes('/p/')) {
+          const name = facets['/meaning']?.meaning?.[0];
+          if (name) variables.push({ name, facets: [false, false, false], facetValues: ['', '', ''] });
+        }
+      }
+      if (variables.length > 0) {
+        bus.emit(VARS_URL, { variables });
+      }
+    });
+
+    renderJson({});
+
+    // --- State ---
+    let cgpEnabled = true;
+    let cgpElement = null;
+
+    // --- Listen for instance-ready from the custom element ---
+    document.addEventListener('cgp-instance-ready', (e) => {
+      const { typeUrl, instanceUrl, element, attributes } = e.detail;
+      instanceRegistry.register({ instanceUrl, typeUrl, element, attributes });
+      listView.render(document.getElementById('instanceList'));
+    });
+
+    // --- Code preview ---
+    function renderCodePreview() {
+      const pre = document.getElementById('codePreviewPre');
+      if (cgpEnabled) {
+        pre.innerHTML =
+          '<span class="hl-punct">&lt;</span><span class="hl-tag">cgp-html-forms-drag-and-drop</span>\n' +
+          '  <span class="hl-attr">cgp-target</span><span class="hl-punct">=</span><span class="hl-string">".drop-zone"</span>\n' +
+          '  <span class="hl-attr">cgp-system-id</span><span class="hl-punct">=</span><span class="hl-string">"0"</span>\n' +
+          '  <span class="hl-attr">cgp-observatron-id</span><span class="hl-punct">=</span><span class="hl-string">"0"</span><span class="hl-punct">&gt;</span>\n' +
+          '  <span class="hl-punct">&lt;</span><span class="hl-tag">div</span> <span class="hl-attr">class</span><span class="hl-punct">=</span><span class="hl-string">"drop-zone"</span><span class="hl-punct">&gt;</span>...<span class="hl-punct">&lt;/</span><span class="hl-tag">div</span><span class="hl-punct">&gt;</span>\n' +
+          '<span class="hl-punct">&lt;/</span><span class="hl-tag">cgp-html-forms-drag-and-drop</span><span class="hl-punct">&gt;</span>';
+      } else {
+        pre.innerHTML =
+          '<span class="hl-punct">&lt;</span><span class="hl-tag">div</span> <span class="hl-attr">class</span><span class="hl-punct">=</span><span class="hl-string">"drop-zone"</span><span class="hl-punct">&gt;</span>\n' +
+          '  ...\n' +
+          '<span class="hl-punct">&lt;/</span><span class="hl-tag">div</span><span class="hl-punct">&gt;</span>';
+      }
+    }
+    // --- Initially hide middle panel content ---
+    document.getElementById('cgpToggle').style.display = 'none';
+
+    // --- Render type list in left panel (deferred instantiation on click) ---
+    typeListView.render(document.getElementById('instanceList'), async (typeUrl, typeDef) => {
+      if (cgpElement) return; // only instantiate once
+
+      // Create drop zone and custom element wrapper
+      const body = document.getElementById('panelLeftBody');
+      body.innerHTML = '';
+      const dropZone = document.createElement('div');
+      dropZone.className = 'drop-zone';
+      dropZone.id = 'dropZone';
+      dropZone.innerHTML = '<div class="drop-zone-icon">&#8693;</div><div>Drag &amp; Drop</div><div class="drop-zone-label">Drop a CSV here</div>';
+
+      const wrapper = document.createElement('cgp-html-forms-drag-and-drop');
+      wrapper.setAttribute('cgp-target', '.drop-zone');
+      wrapper.setAttribute('cgp-system-id', '0');
+      wrapper.setAttribute('cgp-observatron-id', '0');
+      wrapper.appendChild(dropZone);
+      body.appendChild(wrapper);
+
+      // Define the custom element (triggers connectedCallback → cgp-instance-ready)
+      await import('../../cgp-html-forms-drag-and-drop.js');
+      cgpElement = wrapper;
+
+      // Show CGP toggle and code preview
+      document.getElementById('cgpToggle').style.display = '';
+      renderCodePreview();
+    });
+
+    // --- CGP toggle ---
+    const toggleBtn = document.getElementById('cgpToggle');
+    toggleBtn.addEventListener('click', () => {
+      cgpEnabled = !cgpEnabled;
+      if (cgpElement) {
+        cgpElement.cgpEnabled = cgpEnabled;
+      }
+      toggleBtn.textContent = cgpEnabled ? 'CGP ON' : 'CGP OFF';
+      toggleBtn.className = 'control-row__toggle ' +
+        (cgpEnabled ? 'control-row__toggle--on' : 'control-row__toggle--off');
+      renderCodePreview();
+    });
+
+    // --- Resizer logic ---
+    const newLeft      = document.getElementById('panelNewLeft');
+    const resizerLeft  = document.getElementById('resizerLeft');
+    const middle       = document.getElementById('panelLeft');
+    const resizerRight = document.getElementById('resizerRight');
+    const right        = document.getElementById('panelRight');
+    const container    = newLeft.parentElement;
+    let activeResizer  = null;
+
+    function startDrag(resizer, e) {
+      e.preventDefault();
+      activeResizer = resizer;
+      resizer.classList.add('active');
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    resizerLeft.addEventListener('mousedown',  (e) => startDrag(resizerLeft, e));
+    resizerRight.addEventListener('mousedown', (e) => startDrag(resizerRight, e));
+
+    document.addEventListener('mousemove', (e) => {
+      if (!activeResizer) return;
+      const rect = container.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+
+      if (activeResizer === resizerLeft) {
+        const w = Math.max(150, Math.min(x, rect.width - 400));
+        newLeft.style.width = w + 'px';
+      } else {
+        const leftW = newLeft.getBoundingClientRect().width + 6;
+        const available = rect.width - leftW - 6;
+        let middleW = x - leftW;
+        middleW = Math.max(200, Math.min(middleW, available - 200));
+        middle.style.flex = 'none';
+        right.style.flex = 'none';
+        middle.style.width = middleW + 'px';
+        right.style.width = (available - middleW) + 'px';
+      }
+    });
+
+    document.addEventListener('mouseup', () => {
+      if (!activeResizer) return;
+      activeResizer.classList.remove('active');
+      activeResizer = null;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    });
+
+    // --- Copy button ---
+    window.copyState = function() {
+      const btn = document.getElementById('copyBtn');
+      navigator.clipboard.writeText(JSON.stringify(currentState, null, 2)).then(() => {
+        btn.textContent = '\u2714 Copied';
+        btn.classList.add('success');
+        setTimeout(() => {
+          btn.textContent = 'Copy';
+          btn.classList.remove('success');
+        }, 1500);
+      });
+    };
+  </script>
+</body>
+</html>

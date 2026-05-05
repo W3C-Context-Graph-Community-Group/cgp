@@ -5,7 +5,8 @@
   "type": "module",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "test": "for f in tests/*.test.mjs; do node \"$f\" || exit 1; done"
   },
   "dependencies": {
     "ws": "^8.0.0",
