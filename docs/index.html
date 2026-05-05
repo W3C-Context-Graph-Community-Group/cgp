@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+<title>Docs — Dark Fraction</title>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #f5f5f5;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    color: #333;
+    min-height: 100vh;
+    display: flex;
+  }
+
+  /* ── Two-column layout ── */
+  .docs-layout {
+    display: flex;
+    width: 100%;
+    min-height: 100vh;
+    padding-top: 54px; /* clear hamburger */
+  }
+
+  /* ── Left sidebar (doc list) ── */
+  .docs-sidebar {
+    width: 220px;
+    flex-shrink: 0;
+    padding: 24px 16px;
+    border-right: 1px solid #e0e0e0;
+    background: #fafafa;
+    position: sticky;
+    top: 54px;
+    height: calc(100vh - 54px);
+    overflow-y: auto;
+  }
+
+  .docs-sidebar__title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #999;
+    margin-bottom: 16px;
+  }
+
+  .docs-sidebar__list {
+    list-style: none;
+  }
+
+  .docs-sidebar__item {
+    display: block;
+    padding: 8px 12px;
+    margin-bottom: 2px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #555;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+    text-decoration: none;
+  }
+
+  .docs-sidebar__item:hover {
+    background: #eee;
+  }
+
+  .docs-sidebar__item.active {
+    background: rgba(59, 130, 246, 0.1);
+    color: #2563eb;
+    font-weight: 600;
+  }
+
+  .docs-sidebar__section {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #999;
+    margin: 20px 0 8px;
+    padding: 0 12px;
+    list-style: none;
+  }
+
+  /* ── Right content area ── */
+  .docs-content {
+    flex: 1;
+    min-width: 0;
+    padding: 32px 48px 80px;
+  }
+
+  .docs-content__card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    padding: 40px 48px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  }
+
+  /* ── Markdown rendered content ── */
+  .docs-content__card h1 {
+    font-size: 26px;
+    font-weight: 700;
+    color: #111;
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #f0f0f0;
+  }
+
+  .docs-content__card h2 {
+    font-size: 20px;
+    font-weight: 700;
+    color: #222;
+    margin: 2em 0 0.6em;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
+  .docs-content__card h3 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #333;
+    margin: 1.6em 0 0.4em;
+  }
+
+  .docs-content__card h4 {
+    font-size: 13px;
+    font-weight: 700;
+    color: #555;
+    margin: 1.4em 0 0.3em;
+  }
+
+  .docs-content__card p {
+    font-size: 14px;
+    line-height: 1.75;
+    margin: 0.6em 0;
+  }
+
+  .docs-content__card strong { color: #111; }
+
+  .docs-content__card a {
+    color: #2563eb;
+    text-decoration: none;
+  }
+  .docs-content__card a:hover {
+    text-decoration: underline;
+  }
+
+  .docs-content__card code {
+    background: #eff6ff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    color: #2563eb;
+  }
+
+  .docs-content__card pre {
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-radius: 8px;
+    padding: 16px 20px;
+    overflow-x: auto;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    margin: 1em 0;
+  }
+
+  .docs-content__card pre code {
+    background: none;
+    padding: 0;
+    color: inherit;
+    font-size: inherit;
+  }
+
+  .docs-content__card ul, .docs-content__card ol {
+    padding-left: 1.5em;
+    margin: 0.6em 0;
+  }
+
+  .docs-content__card li {
+    font-size: 14px;
+    line-height: 1.75;
+    margin: 0.3em 0;
+  }
+
+  .docs-content__card blockquote {
+    border-left: 3px solid #2563eb;
+    padding: 8px 16px;
+    margin: 1em 0;
+    background: #f0f7ff;
+    color: #555;
+    font-style: italic;
+  }
+
+  .docs-content__card table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1em 0;
+    font-size: 13px;
+  }
+
+  .docs-content__card th {
+    background: #f8f8f8;
+    font-weight: 700;
+    text-align: left;
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+  }
+
+  .docs-content__card td {
+    padding: 8px 12px;
+    border: 1px solid #e0e0e0;
+    vertical-align: top;
+  }
+
+  .docs-content__card hr {
+    border: none;
+    border-top: 1px solid #eee;
+    margin: 2em 0;
+  }
+
+  .docs-content__card img {
+    max-width: 100%;
+    border-radius: 8px;
+    margin: 1em 0;
+  }
+
+  /* ── Loading / empty ── */
+  .docs-loading {
+    color: #999;
+    font-size: 13px;
+    padding: 20px 0;
+  }
+
+  /* fade in */
+  .docs-content__card {
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .docs-content__card.loaded { opacity: 1; }
+
+  /* ── Export toolbar ── */
+  .docs-toolbar {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+
+  .docs-export-btn {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 6px 16px;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fff;
+    color: #555;
+    cursor: pointer;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+
+  .docs-export-btn:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #f0f7ff;
+  }
+</style>
+</head>
+<body>
+<script src="../js/nav/sidebar.js" data-active="docs"></script>
+
+<div class="docs-layout">
+  <aside class="docs-sidebar">
+    <div class="docs-sidebar__title">Documentation</div>
+    <ul class="docs-sidebar__list" id="docs-list"></ul>
+  </aside>
+
+  <main class="docs-content">
+    <div class="docs-toolbar">
+      <button class="docs-export-btn" data-format="pdf">PDF</button>
+      <button class="docs-export-btn" data-format="txt">TXT</button>
+      <button class="docs-export-btn" data-format="md">MD</button>
+      <button class="docs-export-btn" data-format="docx">DOCX</button>
+    </div>
+    <div class="docs-content__card" id="docs-card">
+      <p class="docs-loading">Loading...</p>
+    </div>
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html-docx-js/dist/html-docx.js"></script>
+<script>
+/* ─────────────────────────────────────────────────────────
+   DocsLeftColumnManager
+   ─────────────────────────────────────────────────────────
+   Manages the docs sidebar sections and file entries.
+
+   Usage:
+     DocsLeftColumnManager.setSection("General", [
+       "getting_started.md",
+       "event_bus.md",
+       "sidebar.md"
+     ]);
+     DocsLeftColumnManager.setSection("Canonical", [
+       "canonical/tasks.md",
+       "canonical/keys.md"
+     ]);
+     DocsLeftColumnManager.render();          // builds the sidebar & loads first doc
+   ───────────────────────────────────────────────────────── */
+var DocsLeftColumnManager = (function () {
+  var listEl = document.getElementById('docs-list');
+  var cardEl = document.getElementById('docs-card');
+  var activeFile = null;
+  var sections = [];       // ordered list: { name, files[] }
+
+  /* ── Derive a display title from a file path ── */
+  function titleFromPath(filePath) {
+    var name = filePath.split('/').pop().replace(/\.md$/i, '');
+    return name
+      .replace(/[-_]/g, ' ')
+      .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
+  }
+
+  /* ── Load & display a markdown file ── */
+  function loadDoc(file) {
+    if (activeFile === file) return;
+    activeFile = file;
+    window.location.hash = file;
+
+    var items = listEl.querySelectorAll('.docs-sidebar__item');
+    items.forEach(function (el) {
+      el.classList.toggle('active', el.dataset.file === file);
+    });
+
+    cardEl.classList.remove('loaded');
+
+    fetch(file)
+      .then(function (r) {
+        if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+        return r.text();
+      })
+      .then(function (md) {
+        cardEl.innerHTML = marked.parse(md);
+        cardEl.classList.add('loaded');
+      })
+      .catch(function (err) {
+        cardEl.innerHTML = '<p style="color:#c00">Failed to load ' + file + ': ' + err.message + '</p>';
+        cardEl.classList.add('loaded');
+      });
+  }
+
+  /* ── Public API ── */
+  return {
+    /**
+     * setSection("Section Name", ["path/to/a.md", "path/to/b.md"])
+     * Call once per section, in the order you want them to appear.
+     * If sectionName is null or "", files are added without a header.
+     */
+    setSection: function (sectionName, files) {
+      sections.push({ name: sectionName || null, files: files });
+    },
+
+    /**
+     * render()  — build the sidebar from all registered sections
+     *             and load the doc from the URL hash (or the first file).
+     */
+    render: function () {
+      listEl.innerHTML = '';
+      var firstFile = null;
+
+      sections.forEach(function (sec) {
+        if (sec.name) {
+          var hdr = document.createElement('li');
+          hdr.className = 'docs-sidebar__section';
+          hdr.textContent = sec.name;
+          listEl.appendChild(hdr);
+        }
+
+        sec.files.forEach(function (filePath) {
+          if (!firstFile) firstFile = filePath;
+          var li = document.createElement('li');
+          li.className = 'docs-sidebar__item';
+          li.textContent = titleFromPath(filePath);
+          li.dataset.file = filePath;
+          li.addEventListener('click', function () { loadDoc(filePath); });
+          listEl.appendChild(li);
+        });
+      });
+
+      var hash = window.location.hash.slice(1);
+      var allFiles = sections.reduce(function (acc, s) { return acc.concat(s.files); }, []);
+      var target = allFiles.indexOf(hash) !== -1 ? hash : firstFile;
+      if (target) loadDoc(target);
+    },
+
+    /** loadDoc(file) — programmatically navigate to a doc */
+    loadDoc: loadDoc
+  };
+})();
+
+/* handle back/forward */
+window.addEventListener('hashchange', function () {
+  var hash = window.location.hash.slice(1);
+  if (hash) DocsLeftColumnManager.loadDoc(hash);
+});
+
+/* ─────────────────────────────────────────────────────────
+   Auto-load all .md files from r/ via the server API.
+   Files are grouped by their top-level subdirectory.
+   ───────────────────────────────────────────────────────── */
+fetch('/api/r-files')
+  .then(function (r) { return r.json(); })
+  .then(function (files) {
+    var groups = {};
+    files.forEach(function (f) {
+      var parts = f.split('/');
+      var section = parts.length > 1 ? parts[0] : null;
+      if (!groups[section]) groups[section] = [];
+      groups[section].push('/r/' + f);
+    });
+
+    Object.keys(groups).forEach(function (section) {
+      DocsLeftColumnManager.setSection(section, groups[section]);
+    });
+
+    DocsLeftColumnManager.render();
+  })
+  .catch(function (err) {
+    document.getElementById('docs-card').innerHTML =
+      '<p style="color:#c00">Failed to load file list: ' + err.message + '</p>';
+    document.getElementById('docs-card').classList.add('loaded');
+  });
+</script>
+
+<script src="doc-exporter.js"></script>
+<script>
+(function () {
+  var exporter = new DocExporter(document.getElementById('docs-card'));
+  document.querySelectorAll('.docs-export-btn').forEach(function (btn) {
+    btn.addEventListener('click', function () { exporter.export(btn.dataset.format); });
+  });
+})();
+</script>
+</body>
+</html>

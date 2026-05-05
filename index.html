@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <title>Dark Fraction — W3C Context Graph CG</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #f5f5f5;
+      font-family: 'JetBrains Mono', monospace;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+    }
+    .subtitle {
+      color: #999;
+      font-size: 13px;
+      margin-bottom: 48px;
+    }
+
+    .cards {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 900px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 16px;
+      padding: 32px 28px;
+      width: 260px;
+      text-decoration: none;
+      color: inherit;
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+    }
+
+    .card-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      margin-bottom: 18px;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+    .card-desc {
+      font-size: 12px;
+      color: #888;
+      line-height: 1.6;
+    }
+
+    /* Per-card accent colors */
+    .card.red:hover   { border-color: #FF6B6B; }
+    .card.red .card-icon   { background: #FF6B6B18; color: #FF6B6B; }
+    .card.red .card-title  { color: #FF6B6B; }
+
+    .card.teal:hover  { border-color: #4ECDC4; }
+    .card.teal .card-icon  { background: #4ECDC418; color: #4ECDC4; }
+    .card.teal .card-title { color: #4ECDC4; }
+
+    .card.purple:hover { border-color: #A78BFA; }
+    .card.purple .card-icon  { background: #A78BFA18; color: #A78BFA; }
+    .card.purple .card-title { color: #A78BFA; }
+
+    .card.amber:hover { border-color: #F59E0B; }
+    .card.amber .card-icon  { background: #F59E0B18; color: #F59E0B; }
+    .card.amber .card-title { color: #F59E0B; }
+
+    .card.gray:hover { border-color: #6B7280; }
+    .card.gray .card-icon  { background: #6B728018; color: #6B7280; }
+    .card.gray .card-title { color: #6B7280; }
+
+    .card.blue:hover { border-color: #3B82F6; }
+    .card.blue .card-icon  { background: #3B82F618; color: #3B82F6; }
+    .card.blue .card-title { color: #3B82F6; }
+
+    .footer {
+      margin-top: 48px;
+      color: #bbb;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Context Graph Protocol - Node Demo</h1>
+  <div class="subtitle">W3C Context Graph Community Group</div>
+
+  <div class="cards">
+    <a href="calculator/" class="card red">
+      <div class="card-icon">δ</div>
+      <div class="card-title">Calculator</div>
+      <div class="card-desc">Compute the dark fraction δ for boundary variables with meaning, structure, and context facets.</div>
+    </a>
+
+    <a href="observatrons/" class="card teal">
+      <div class="card-icon">◎</div>
+      <div class="card-title">Observatrons</div>
+      <div class="card-desc">Visualize observer configurations and their coverage across the configuration space.</div>
+    </a>
+
+<a href="components/" class="card amber">
+      <div class="card-icon">⧉</div>
+      <div class="card-title">Components</div>
+      <div class="card-desc">CGP web components for building context-graph applications.</div>
+    </a>
+
+    <a href="liquid_hypergraph/" class="card blue">
+      <div class="card-icon">⬡</div>
+      <div class="card-title">Liquid Hypergraph</div>
+      <div class="card-desc">Navigate the CGP URL graph as a tree, inspect facets, and track delta analytics across the namespace.</div>
+    </a>
+
+    <a href="docs/" class="card gray">
+      <div class="card-icon">?</div>
+      <div class="card-title">Docs</div>
+      <div class="card-desc">Protocol specification, getting started guide, and reference documentation.</div>
+    </a>
+  </div>
+
+  <div class="footer">W3C Context Graph Community Group</div>
+</body>
+</html>

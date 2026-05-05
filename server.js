@@ -1,39 +1,77 @@
-import { createServer } from 'node:http';
-import { readFile, stat } from 'node:fs/promises';
-import { join, extname, normalize } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
-import { spawn } from 'node:child_process';
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname, join, extname } from 'path';
+import { createServer } from 'http';
+import { readFile, readdir, stat } from 'fs/promises';
 
-const __dirname = dirname(fileURLToPath(import.meta.url));
+const ROOT = dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT || '3000', 10);
 
+/* ── MIME types ── */
 const MIME = {
-  '.html': 'text/html; charset=utf-8',
-  '.js':   'application/javascript; charset=utf-8',
-  '.mjs':  'application/javascript; charset=utf-8',
-  '.css':  'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.md':   'text/markdown; charset=utf-8',
-  '.svg':  'image/svg+xml',
-  '.png':  'image/png',
-  '.jpg':  'image/jpeg',
-  '.ico':  'image/x-icon'
+  '.html':  'text/html; charset=utf-8',
+  '.css':   'text/css; charset=utf-8',
+  '.js':    'application/javascript; charset=utf-8',
+  '.mjs':   'application/javascript; charset=utf-8',
+  '.json':  'application/json; charset=utf-8',
+  '.md':    'text/markdown; charset=utf-8',
+  '.txt':   'text/plain; charset=utf-8',
+  '.csv':   'text/csv; charset=utf-8',
+  '.svg':   'image/svg+xml',
+  '.png':   'image/png',
+  '.jpg':   'image/jpeg',
+  '.jpeg':  'image/jpeg',
+  '.gif':   'image/gif',
+  '.ico':   'image/x-icon',
+  '.woff':  'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf':   'font/ttf',
 };
 
-// Spawn the websocket bus as a child process
-const bus = spawn('node', ['lib/event-bus/server.js'], {
-  stdio: 'inherit',
-  env: { ...process.env, BUS_PORT: '8080' }
-});
-process.on('exit', () => bus.kill());
-process.on('SIGINT', () => { bus.kill(); process.exit(); });
+/* ── Recursively list .md files under a directory ── */
+async function listMdFiles(dir, base = '') {
+  const entries = await readdir(dir, { withFileTypes: true });
+  let files = [];
+  for (const entry of entries) {
+    const fullPath = join(dir, entry.name);
+    const relPath = base ? base + '/' + entry.name : entry.name;
+    if (entry.isDirectory()) {
+      files = files.concat(await listMdFiles(fullPath, relPath));
+    } else if (entry.name.endsWith('.md')) {
+      files.push(relPath);
+    }
+  }
+  return files;
+}
 
-// HTTP server for static files
-const httpServer = createServer(async (req, res) => {
-  let pathname = decodeURIComponent(req.url.split('?')[0]);
+/* ── HTTP server ── */
+const server = createServer(async (req, res) => {
+  const url = new URL(req.url, `http://localhost:${PORT}`);
+  let pathname = decodeURIComponent(url.pathname);
+
+  /* API endpoint: list all .md files under r/ */
+  if (pathname === '/api/r-files') {
+    try {
+      const files = await listMdFiles(join(ROOT, 'r'));
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify(files));
+    } catch (err) {
+      res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  /* Static file serving */
   if (pathname.endsWith('/')) pathname += 'index.html';
-  const filePath = join(__dirname, normalize(pathname));
+  const filePath = join(ROOT, pathname);
+
+  // Prevent path traversal
+  if (!filePath.startsWith(ROOT)) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
+  }
 
   try {
     const fileStat = await stat(filePath);
@@ -48,12 +86,26 @@ const httpServer = createServer(async (req, res) => {
     res.writeHead(200, { 'Content-Type': mime });
     res.end(data);
   } catch {
-    res.writeHead(404);
-    res.end('Not Found');
+    res.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Not found');
   }
 });
 
-httpServer.listen(PORT, () => {
-  console.log(`HTTP serving from ${__dirname} on http://localhost:${PORT}`);
-  console.log(`WebSocket bus on ws://localhost:8080`);
+server.listen(PORT, () => {
+  console.log(`HTTP serving from ${ROOT} on http://localhost:${PORT}`);
 });
+
+/* ── Start event bus (WebSocket on port 8080) ── */
+const bus = spawn('node', ['lib/event-bus/server.js'], {
+  cwd: ROOT,
+  stdio: 'inherit',
+  env: { ...process.env, BUS_PORT: '8080' },
+});
+
+bus.on('close', (code) => {
+  server.close();
+  process.exit(code);
+});
+
+process.on('SIGINT',  () => { bus.kill(); server.close(); process.exit(0); });
+process.on('SIGTERM', () => { bus.kill(); server.close(); process.exit(0); });

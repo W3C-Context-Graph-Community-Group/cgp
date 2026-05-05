@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+  <title>Calculator — Dark Fraction</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700;800&display=swap" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: #f5f5f5;
+      font-family: 'JetBrains Mono', monospace;
+      color: #333;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 800;
+      margin-bottom: 8px;
+      letter-spacing: -0.5px;
+      color: #FF6B6B;
+    }
+    .subtitle {
+      color: #999;
+      font-size: 13px;
+      margin-bottom: 48px;
+    }
+
+    .cards {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      justify-content: center;
+      max-width: 900px;
+    }
+
+    .card {
+      background: #fff;
+      border: 1px solid #e0e0e0;
+      border-radius: 16px;
+      padding: 32px 28px;
+      width: 260px;
+      text-decoration: none;
+      color: inherit;
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 24px rgba(0,0,0,.08);
+      border-color: #FF6B6B;
+    }
+
+    .card-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 22px;
+      margin-bottom: 18px;
+      background: #FF6B6B18;
+      color: #FF6B6B;
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #FF6B6B;
+    }
+    .card-desc {
+      font-size: 12px;
+      color: #888;
+      line-height: 1.6;
+    }
+
+    .footer {
+      margin-top: 48px;
+      color: #bbb;
+      font-size: 10px;
+    }
+  </style>
+</head>
+<body>
+  <script src="../sidebar.js" data-active="calculator"></script>
+
+  <h1>δ Calculator</h1>
+  <div class="subtitle">Dark Fraction — choose node count</div>
+
+  <div class="cards">
+    <a href="1.html" class="card">
+      <div class="card-icon">1</div>
+      <div class="card-title">Single Node</div>
+      <div class="card-desc">Compute the dark fraction δ for one observatron with boundary variables.</div>
+    </a>
+
+    <a href="active/" class="card">
+      <div class="card-icon">δ</div>
+      <div class="card-title">Active</div>
+      <div class="card-desc">Live dark fraction calculator connected to the event bus.</div>
+    </a>
+  </div>
+
+  <div class="footer">W3C Context Graph Community Group</div>
+
+</body>
+</html>
