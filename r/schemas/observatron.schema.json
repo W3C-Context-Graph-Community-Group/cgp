@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "observatron.schema.json",
+  "title": "Observatron Entry",
+  "description": "A four-facet observatron entry on the Context Graph. Validates the shape defined in r/meta/schema.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["/data", "/meaning", "/structure", "/context"],
+  "properties": {
+    "/data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value"],
+      "properties": {
+        "value": {}
+      }
+    },
+    "/meaning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "value"],
+      "$comment": "key and value arrays must have equal length; not expressible in JSON Schema alone — enforced at runtime if needed.",
+      "properties": {
+        "key": { "type": "array", "items": { "type": "string" } },
+        "value": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "/structure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "value"],
+      "properties": {
+        "key": { "type": "array", "items": { "type": "string" } },
+        "value": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "/context": {
+       "$comment": "The first two rows are the minting rows: row 0 records the task (key='cgp:/r/keys/task.md', value matches 'cgp:/r/tasks/<task-name>.md'), row 1 records the component-type (key='cgp:/r/keys/component-type.md', value matches 'cgp:/r/components/<path>.md'). Both rows MUST share the same anchor, source, channel, and timestamp (one minting event, two facts). Cross-array equality (lengths matching across columns; row 0 == row 1 for anchor/source/channel/timestamp; anchor == source for observatron rows) is not expressible in JSON Schema alone — enforced at runtime if needed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["anchor", "source", "channel", "timestamp", "key", "value"],
+      "properties": {
+        "anchor": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string",
+            "pattern": "^cgp:/s/[^/]+/o/[^/]+$"
+          }
+        },
+        "source": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string",
+            "pattern": "^cgp:/s/[^/]+/o/[^/]+$"
+          }
+        },
+        "channel": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string",
+            "pattern": "^cgp:/r/[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*\\.md$"
+          }
+        },
+        "timestamp": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+          }
+        },
+        "key": {
+          "type": "array",
+          "minItems": 2,
+          "prefixItems": [
+            { "const": "cgp:/r/keys/task.md" },
+            { "const": "cgp:/r/keys/component-type.md" }
+          ],
+          "items": {
+            "type": "string",
+            "pattern": "^cgp:/r/keys/[a-z][a-z0-9-]*\\.md$"
+          }
+        },
+        "value": {
+          "type": "array",
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "string",
+              "pattern": "^cgp:/r/tasks/[a-z][a-z0-9-]*\\.md$"
+            },
+            {
+              "type": "string",
+              "pattern": "^cgp:/r/components/[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*\\.md$"
+            }
+          ],
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

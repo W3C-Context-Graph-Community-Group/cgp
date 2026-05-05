@@ -1,0 +1,103 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "spike.schema.json",
+  "title": "Spike Entry",
+  "description": "A four-facet spike entry on the Context Graph. Validates the shape defined in r/meta/schema.md.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["/data", "/meaning", "/structure", "/context"],
+  "properties": {
+    "/data": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["value"],
+      "properties": {
+        "value": {}
+      }
+    },
+    "/meaning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "value"],
+      "properties": {
+        "key": { "type": "array", "items": { "type": "string" } },
+        "value": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "/structure": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["key", "value"],
+      "properties": {
+        "key": { "type": "array", "items": { "type": "string" } },
+        "value": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "/context": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["anchor", "source", "channel", "timestamp", "key", "value"],
+      "properties": {
+        "anchor": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string",
+            "pattern": "^cgp:/s/[^/]+/o/[^/]+/c/[^/]+/[0-9]+/a/[0-9]+/p/[0-9]+$"
+          }
+        },
+        "source": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string",
+            "pattern": "^cgp:/s/[^/]+/o/[^/]+$"
+          }
+        },
+        "channel": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string",
+            "pattern": "^cgp:/r/[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*\\.md$"
+          }
+        },
+        "timestamp": {
+          "type": "array",
+          "minItems": 2,
+          "items": {
+            "type": "string",
+            "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$"
+          }
+        },
+        "key": {
+          "type": "array",
+          "minItems": 2,
+          "prefixItems": [
+            { "const": "cgp:/r/keys/task.md" },
+            { "const": "cgp:/r/keys/component-type.md" }
+          ],
+          "items": {
+            "type": "string",
+            "pattern": "^cgp:/r/keys/[a-z][a-z0-9-]*\\.md$"
+          }
+        },
+        "value": {
+          "type": "array",
+          "minItems": 2,
+          "prefixItems": [
+            {
+              "type": "string",
+              "pattern": "^cgp:/r/tasks/[a-z][a-z0-9-]*\\.md$"
+            },
+            {
+              "type": "string",
+              "pattern": "^cgp:/r/components/[a-z][a-z0-9-]*(/[a-z][a-z0-9-]*)*\\.md$"
+            }
+          ],
+          "items": { "type": "string" }
+        }
+      }
+    }
+  }
+}

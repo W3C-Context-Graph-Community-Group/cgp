@@ -1,0 +1,15 @@
+{
+  "name": "cgp",
+  "version": "0.1.0",
+  "description": "Context Graph Protocol — reference implementation",
+  "type": "module",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "ws": "^8.0.0",
+    "ajv": "^8.0.0",
+    "ajv-formats": "^3.0.0"
+  }
+}
