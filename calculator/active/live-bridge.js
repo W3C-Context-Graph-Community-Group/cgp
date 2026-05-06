@@ -2,7 +2,7 @@
 // a Dark Fraction calculator whose variables come from the demo's path spikes.
 // Reuses DFC.* components and math from dark-fraction-core.js.
 
-const { useState, useMemo, useCallback, useEffect } = React;
+const { useState, useMemo, useCallback, useEffect, useRef } = React;
 
 let _liveNextId = 1000;
 
@@ -10,9 +10,7 @@ function extractVariables(state) {
   const vars = [];
   for (const obs of (state.observatrons || [])) {
     for (const spike of (obs.spikes || [])) {
-      const name = spike['/meaning']?.key?.[0] || spike['/context']?.anchor?.[0] || '';
-      if (!name) continue;
-
+      const name = spike['/meaning']?.key?.[0] || '';
       const mBit = (spike['/meaning']?.key?.length > 0);
       const sBit = (spike['/structure']?.key?.length > 0);
       const cBit = (spike['/context']?.timestamp?.length > 0);
@@ -20,6 +18,7 @@ function extractVariables(state) {
       vars.push({
         id: _liveNextId++,
         name,
+        dataValue: spike['/data']?.value ?? null,
         facets: [mBit, sBit, cBit],
         facetValues: [
           mBit ? (spike['/meaning']?.value?.[0] || '') : '',
@@ -90,6 +89,28 @@ function LiveCalculator() {
   }, []);
 
   const isEmpty = variables.length === 0;
+
+  const [rpWidth, setRpWidth] = useState(480);
+  const [resizing, setResizing] = useState(false);
+  const dragRef = useRef(null);
+
+  const onResizeMouseDown = useCallback((e) => {
+    e.preventDefault();
+    const startX = e.clientX;
+    const startW = rpWidth;
+    setResizing(true);
+    const onMove = (ev) => {
+      const w = Math.min(800, Math.max(280, startW + (startX - ev.clientX)));
+      setRpWidth(w);
+    };
+    const onUp = () => {
+      setResizing(false);
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+    };
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }, [rpWidth]);
 
   return (
     <div
@@ -240,14 +261,42 @@ function LiveCalculator() {
       {/* RIGHT COLUMN - boundary variables (no presets) */}
       <div
         style={{
-          width: 480,
+          width: rpWidth,
           flexShrink: 0,
           display: "flex",
           flexDirection: "column",
           padding: "32px 28px",
           overflowY: "auto",
+          position: "relative",
         }}
       >
+        {/* Resize handle */}
+        <div
+          onMouseDown={onResizeMouseDown}
+          style={{
+            position: "absolute",
+            top: 0,
+            left: -4,
+            bottom: 0,
+            width: 8,
+            cursor: "col-resize",
+            zIndex: 10,
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 3,
+              bottom: 0,
+              width: 2,
+              background: resizing ? "#4a90d9" : "transparent",
+              transition: "background 0.15s",
+            }}
+            onMouseEnter={(e) => { if (!resizing) e.currentTarget.style.background = "#4a90d9"; }}
+            onMouseLeave={(e) => { if (!resizing) e.currentTarget.style.background = "transparent"; }}
+          />
+        </div>
         {/* Variables card */}
         <div
           style={{
@@ -279,40 +328,6 @@ function LiveCalculator() {
             >
               Boundary variables
             </div>
-            {!isEmpty && (
-              <div style={{ display: "flex", gap: 6 }}>
-                <button
-                  onClick={clearAll}
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: 6,
-                    border: "1px solid #e0e0e0",
-                    background: "#f9f9f9",
-                    color: "#FF6B6B",
-                    fontSize: 10,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    cursor: "pointer",
-                  }}
-                >
-                  Clear all
-                </button>
-                <button
-                  onClick={verifyAll}
-                  style={{
-                    padding: "4px 10px",
-                    borderRadius: 6,
-                    border: "1px solid #e0e0e0",
-                    background: "#f9f9f9",
-                    color: "#4ECDC4",
-                    fontSize: 10,
-                    fontFamily: "'JetBrains Mono', monospace",
-                    cursor: "pointer",
-                  }}
-                >
-                  Verify all
-                </button>
-              </div>
-            )}
           </div>
 
           {isEmpty ? (
@@ -335,33 +350,6 @@ function LiveCalculator() {
             </div>
           ) : (
             <>
-              {/* Facet legend row */}
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: 6,
-                  marginBottom: 6,
-                  paddingRight: 38,
-                }}
-              >
-                {DFC.FACET_NAMES.map((name, i) => (
-                  <div
-                    key={name}
-                    style={{
-                      width: 40,
-                      textAlign: "center",
-                      fontSize: 9,
-                      color: DFC.FACET_COLORS[i],
-                      opacity: 0.7,
-                      letterSpacing: 0.5,
-                    }}
-                  >
-                    {name.slice(0, 3).toUpperCase()}
-                  </div>
-                ))}
-              </div>
-
               <div
                 style={{
                   flex: 1,
@@ -376,6 +364,8 @@ function LiveCalculator() {
                     key={v.id}
                     variable={v}
                     index={i}
+                    hideFacetToggles
+                    showAllFacets
                     onToggleFacet={(fi) => toggleFacet(v.id, fi)}
                     onRemove={() => removeVariable(v.id)}
                     onRename={(name) => renameVariable(v.id, name)}

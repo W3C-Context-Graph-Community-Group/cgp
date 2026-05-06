@@ -135,9 +135,9 @@ function formatDelta(delta) {
 
 // --- Components ---
 
-const FACET_LABELS = ["M", "S", "C"];
-const FACET_NAMES = ["Meaning", "Structure", "Context"];
-const FACET_COLORS = ["#FF6B6B", "#4ECDC4", "#A78BFA"];
+const FACET_LABELS = ["M", "S", "C", "D"];
+const FACET_NAMES = ["Meaning", "Structure", "Context", "Data"];
+const FACET_COLORS = ["#FF6B6B", "#4ECDC4", "#A78BFA", "#6ec6ff"];
 
 function FacetToggle({ active, color, label, fullName, onClick }) {
   return (
@@ -177,9 +177,11 @@ function FacetToggle({ active, color, label, fullName, onClick }) {
   );
 }
 
-function FacetInputRow({ facetIndex, value, onChange }) {
-  const color = FACET_COLORS[facetIndex];
+function FacetInputRow({ facetIndex, value, onChange, colorByValue }) {
   const name = FACET_NAMES[facetIndex];
+  const color = colorByValue
+    ? (value ? "#4ECDC4" : "#FF6B6B")
+    : FACET_COLORS[facetIndex];
 
   return (
     <div
@@ -227,7 +229,7 @@ function FacetInputRow({ facetIndex, value, onChange }) {
   );
 }
 
-function VariableRow({ variable, index, onToggleFacet, onRemove, onRename, onUpdateFacetValue }) {
+function VariableRow({ variable, index, onToggleFacet, onRemove, onRename, onUpdateFacetValue, hideFacetToggles, showAllFacets }) {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(variable.name);
 
@@ -294,18 +296,20 @@ function VariableRow({ variable, index, onToggleFacet, onRemove, onRename, onUpd
             {variable.name}
           </span>
         )}
-        <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-          {FACET_LABELS.map((label, i) => (
-            <FacetToggle
-              key={label}
-              active={variable.facets[i]}
-              color={FACET_COLORS[i]}
-              label={label}
-              fullName={FACET_NAMES[i]}
-              onClick={() => onToggleFacet(i)}
-            />
-          ))}
-        </div>
+        {!hideFacetToggles && (
+          <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+            {FACET_LABELS.map((label, i) => (
+              <FacetToggle
+                key={label}
+                active={variable.facets[i]}
+                color={FACET_COLORS[i]}
+                label={label}
+                fullName={FACET_NAMES[i]}
+                onClick={() => onToggleFacet(i)}
+              />
+            ))}
+          </div>
+        )}
         <button
           onClick={onRemove}
           style={{
@@ -327,13 +331,55 @@ function VariableRow({ variable, index, onToggleFacet, onRemove, onRename, onUpd
           ×
         </button>
       </div>
+      {variable.dataValue != null && (
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "6px 12px 6px 46px",
+            background: "#4ECDC408",
+            borderRadius: 8,
+            border: "1px solid #4ECDC425",
+            marginTop: 2,
+          }}
+        >
+          <span
+            style={{
+              color: "#4ECDC4",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 11,
+              fontWeight: 600,
+              width: 64,
+              flexShrink: 0,
+            }}
+          >
+            Data
+          </span>
+          <span
+            style={{
+              flex: 1,
+              color: "#333",
+              fontFamily: "'JetBrains Mono', monospace",
+              fontSize: 12,
+              minWidth: 0,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {typeof variable.dataValue === "string" ? variable.dataValue : JSON.stringify(variable.dataValue)}
+          </span>
+        </div>
+      )}
       {variable.facets.map((active, i) =>
-        active ? (
+        (active || showAllFacets) ? (
           <FacetInputRow
             key={i}
             facetIndex={i}
             value={variable.facetValues[i]}
             onChange={(val) => onUpdateFacetValue(i, val)}
+            colorByValue={showAllFacets}
           />
         ) : null
       )}

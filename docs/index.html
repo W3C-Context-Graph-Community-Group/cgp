@@ -27,7 +27,8 @@
 
   /* ── Left sidebar (doc list) ── */
   .docs-sidebar {
-    width: 220px;
+    width: 450px;
+    min-width: 250px;
     flex-shrink: 0;
     padding: 24px 16px;
     border-right: 1px solid #e0e0e0;
@@ -53,7 +54,8 @@
   }
 
   .docs-sidebar__item {
-    display: block;
+    display: flex;
+    align-items: center;
     padding: 8px 12px;
     margin-bottom: 2px;
     border-radius: 6px;
@@ -74,6 +76,16 @@
     font-weight: 600;
   }
 
+  .docs-sidebar__chevron {
+    display: inline-block;
+    margin-right: 6px;
+    font-size: 10px;
+    transition: transform 0.2s;
+  }
+  .docs-sidebar__chevron.expanded {
+    transform: rotate(90deg);
+  }
+
   .docs-sidebar__section {
     font-family: 'JetBrains Mono', monospace;
     font-size: 11px;
@@ -85,6 +97,71 @@
     padding: 0 12px;
     list-style: none;
   }
+
+  /* ── Thin scrollbar ── */
+  .docs-sidebar {
+    scrollbar-width: thin;
+    scrollbar-color: #ccc transparent;
+  }
+  .docs-sidebar::-webkit-scrollbar {
+    width: 5px;
+  }
+  .docs-sidebar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .docs-sidebar::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 3px;
+  }
+  .docs-sidebar::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+  }
+
+  /* ── Resize handle ── */
+  .docs-resize-handle {
+    width: 4px;
+    flex-shrink: 0;
+    cursor: col-resize;
+    background: transparent;
+    position: sticky;
+    top: 54px;
+    height: calc(100vh - 54px);
+    z-index: 5;
+    transition: background 0.15s;
+  }
+  .docs-resize-handle:hover,
+  .docs-resize-handle.active {
+    background: rgba(59, 130, 246, 0.4);
+  }
+
+  /* ── Headings submenu ── */
+  .docs-sidebar__headings {
+    list-style: none;
+    padding: 2px 0 6px 0;
+    margin: 0;
+  }
+  .docs-sidebar__headings.collapsed {
+    display: none;
+  }
+  .docs-sidebar__heading-item {
+    display: block;
+    font-size: 12px;
+    color: #777;
+    cursor: pointer;
+    transition: color 0.15s;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .docs-sidebar__heading-item:hover {
+    color: #2563eb;
+  }
+  .docs-sidebar__heading-item[data-level="1"] { padding: 3px 12px 3px 24px; }
+  .docs-sidebar__heading-item[data-level="2"] { padding: 3px 12px 3px 36px; }
+  .docs-sidebar__heading-item[data-level="3"] { padding: 3px 12px 3px 48px; }
+  .docs-sidebar__heading-item[data-level="4"] { padding: 3px 12px 3px 60px; }
+  .docs-sidebar__heading-item[data-level="5"] { padding: 3px 12px 3px 72px; }
+  .docs-sidebar__heading-item[data-level="6"] { padding: 3px 12px 3px 84px; }
 
   /* ── Right content area ── */
   .docs-content {
@@ -277,10 +354,11 @@
 <a href="/" style="position:fixed;top:12px;left:50px;z-index:1100;height:30px;text-decoration:none;color:#aaa;font-size:11px;font-weight:600;display:inline-flex;align-items:center;gap:4px;font-family:'JetBrains Mono',monospace;transition:color .15s" onmouseover="this.style.color='#777'" onmouseout="this.style.color='#aaa'">&#8249; BACK</a>
 
 <div class="docs-layout">
-  <aside class="docs-sidebar">
+  <aside class="docs-sidebar" id="docs-sidebar">
     <div class="docs-sidebar__title">Documentation</div>
     <ul class="docs-sidebar__list" id="docs-list"></ul>
   </aside>
+  <div class="docs-resize-handle" id="docs-resize-handle"></div>
 
   <main class="docs-content">
     <div class="docs-toolbar">
@@ -330,15 +408,69 @@ var DocsLeftColumnManager = (function () {
       .replace(/\b\w/g, function (c) { return c.toUpperCase(); });
   }
 
+  /* ── Build heading submenu under active sidebar item ── */
+  function buildHeadingsSubmenu() {
+    var existing = listEl.querySelector('.docs-sidebar__headings');
+    if (existing) existing.remove();
+
+    var activeItem = listEl.querySelector('.docs-sidebar__item.active');
+    if (!activeItem) return;
+
+    var headings = cardEl.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    if (headings.length === 0) return;
+
+    headings.forEach(function (h, i) {
+      if (!h.id) h.id = 'doc-heading-' + i;
+    });
+
+    var ul = document.createElement('ul');
+    ul.className = 'docs-sidebar__headings';
+
+    headings.forEach(function (h) {
+      var li = document.createElement('li');
+      li.className = 'docs-sidebar__heading-item';
+      li.dataset.level = h.tagName[1];
+      li.textContent = h.textContent;
+      li.addEventListener('click', function (e) {
+        e.stopPropagation();
+        var target = document.getElementById(h.id);
+        if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
+      ul.appendChild(li);
+    });
+
+    listEl.insertBefore(ul, activeItem.nextSibling);
+  }
+
   /* ── Load & display a markdown file ── */
   function loadDoc(file) {
-    if (activeFile === file) return;
+    if (activeFile === file) {
+      var submenu = listEl.querySelector('.docs-sidebar__headings');
+      if (submenu) {
+        submenu.classList.toggle('collapsed');
+        var chevron = listEl.querySelector('.docs-sidebar__item.active .docs-sidebar__chevron');
+        if (chevron) chevron.classList.toggle('expanded', !submenu.classList.contains('collapsed'));
+      }
+      return;
+    }
     activeFile = file;
     window.location.hash = file;
+
+    var existing = listEl.querySelector('.docs-sidebar__headings');
+    if (existing) existing.remove();
+
+    // Reset all chevrons, then expand the active one
+    listEl.querySelectorAll('.docs-sidebar__chevron').forEach(function (c) {
+      c.classList.remove('expanded');
+    });
 
     var items = listEl.querySelectorAll('.docs-sidebar__item');
     items.forEach(function (el) {
       el.classList.toggle('active', el.dataset.file === file);
+      if (el.dataset.file === file) {
+        var chevron = el.querySelector('.docs-sidebar__chevron');
+        if (chevron) chevron.classList.add('expanded');
+      }
     });
 
     cardEl.classList.remove('loaded');
@@ -351,6 +483,7 @@ var DocsLeftColumnManager = (function () {
       .then(function (md) {
         cardEl.innerHTML = marked.parse(md);
         cardEl.classList.add('loaded');
+        buildHeadingsSubmenu();
       })
       .catch(function (err) {
         cardEl.innerHTML = '<p style="color:#c00">Failed to load ' + file + ': ' + err.message + '</p>';
@@ -389,8 +522,12 @@ var DocsLeftColumnManager = (function () {
           if (!firstFile) firstFile = filePath;
           var li = document.createElement('li');
           li.className = 'docs-sidebar__item';
-          li.textContent = titleFromPath(filePath);
           li.dataset.file = filePath;
+          var chevron = document.createElement('span');
+          chevron.className = 'docs-sidebar__chevron';
+          chevron.textContent = '\u203A';
+          li.appendChild(chevron);
+          li.appendChild(document.createTextNode(titleFromPath(filePath)));
           li.addEventListener('click', function () { loadDoc(filePath); });
           listEl.appendChild(li);
         });
@@ -447,6 +584,38 @@ fetch('/api/r-files')
   var exporter = new DocExporter(document.getElementById('docs-card'));
   document.querySelectorAll('.docs-export-btn').forEach(function (btn) {
     btn.addEventListener('click', function () { exporter.export(btn.dataset.format); });
+  });
+})();
+</script>
+<script>
+/* ── Sidebar resize handle ── */
+(function () {
+  var sidebar = document.getElementById('docs-sidebar');
+  var handle = document.getElementById('docs-resize-handle');
+  if (!sidebar || !handle) return;
+
+  var dragging = false;
+
+  handle.addEventListener('mousedown', function (e) {
+    e.preventDefault();
+    dragging = true;
+    handle.classList.add('active');
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+  });
+
+  document.addEventListener('mousemove', function (e) {
+    if (!dragging) return;
+    var w = Math.max(250, Math.min(e.clientX, window.innerWidth * 0.6));
+    sidebar.style.width = w + 'px';
+  });
+
+  document.addEventListener('mouseup', function () {
+    if (!dragging) return;
+    dragging = false;
+    handle.classList.remove('active');
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
   });
 })();
 </script>
