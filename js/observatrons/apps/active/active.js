@@ -31,10 +31,13 @@ import { DecisionGate }        from '../../core/helpers/verification/DecisionGat
 import { OBS_RADIUS, disposeGroup } from '../../core/helpers/math-utils.js';
 import { FacetHeight }         from '../../core/facet-height.js';
 import { connectToState }      from '/lib/state-client/StateClient.js';
+import { InspectorPanel }      from '../blank-template/controls/inspector/inspector-panel.js';
 
 // ── Additive spike state ───────────────────────────────────
 
 let observatronUrl = null;
+/** Latest obs0 from the canonical state pipeline (set in onUpdate). */
+let latestObs0 = null;
 
 /** Set of URLs already rendered (O(1) dedup). */
 const renderedUrlSet = new Set();
@@ -216,6 +219,7 @@ connectToState({
     if (!obs0) return;
 
     observatronUrl = obs0.url;
+    latestObs0 = obs0;
 
     // Rebuild spikeList from authoritative state
     spikeList.length = 0;
@@ -232,8 +236,49 @@ connectToState({
       a.timestamp < b.timestamp ? -1 : a.timestamp > b.timestamp ? 1 : 0
     );
     rebuildMesh(obs);
+
+    // Refresh inspector panel from the same onUpdate
+    refreshInspector();
   },
 });
+
+/* ── Inspector panel (right column — four facets) ── */
+const inspector = new InspectorPanel({
+  initialWidth: 400,
+  onResize: (w) => {
+    document.documentElement.style.setProperty('--rp-width', w + 'px');
+    obs._sceneMgr.triggerResize();
+    fitGridCamera();
+    networkMgr.updateLabels();
+  },
+});
+const ipCSS = inspector.cssURL;
+if (!document.querySelector(`link[href="${ipCSS}"]`)) {
+  const link = document.createElement('link');
+  link.rel = 'stylesheet';
+  link.href = ipCSS;
+  document.head.appendChild(link);
+}
+document.body.appendChild(inspector.mount());
+
+/**
+ * Show the right facets in the inspector panel.
+ * Spike selected → that spike's facets. Otherwise → observatron's facets.
+ * Reads only from latestObs0 (set by the canonical onUpdate).
+ */
+function refreshInspector() {
+  if (!latestObs0) { inspector.clear(); return; }
+  if (selectedSpikeIndex !== null) {
+    const spike = spikeList[selectedSpikeIndex];
+    if (spike) {
+      inspector.showSpike(spike.url, spike.facets);
+    } else {
+      inspector.clear();
+    }
+  } else {
+    inspector.showSpike(latestObs0.url, latestObs0);
+  }
+}
 
 /* ── Layers panel (left sidebar) ── */
 let selectedObsIndex = -1;
@@ -248,6 +293,7 @@ function selectObservatron(index) {
     layersPanel.selectSpike(null, null);
     selectedSpikeIndex = null;
   }
+  refreshInspector();
 }
 
 function selectSpike(obsId, spikeIndex) {
@@ -263,6 +309,7 @@ function selectSpike(obsId, spikeIndex) {
     layersPanel.selectSpike(obsId, spikeIndex);
     selectedSpikeIndex = spikeIndex;
   }
+  refreshInspector();
 }
 
 function buildSingleObsEntries() {

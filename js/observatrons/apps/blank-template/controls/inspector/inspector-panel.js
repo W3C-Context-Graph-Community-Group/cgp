@@ -174,6 +174,23 @@ export class InspectorPanel {
               chip.textContent = v;
               colVals.appendChild(chip);
             }
+          } else if (typeof values === 'object' && values !== null) {
+            for (const [k, val] of Object.entries(values)) {
+              const chip = document.createElement('span');
+              chip.className = 'inspector-panel__facet-chip';
+              chip.style.whiteSpace = 'pre-wrap';
+              if (typeof val === 'string' && (val.startsWith('{') || val.startsWith('['))) {
+                try {
+                  const pretty = JSON.stringify(JSON.parse(val), null, 2);
+                  chip.textContent = `${k}: ${pretty}`;
+                } catch (_) {
+                  chip.textContent = `${k}: ${val}`;
+                }
+              } else {
+                chip.textContent = `${k}: ${val}`;
+              }
+              colVals.appendChild(chip);
+            }
           } else {
             colVals.textContent = String(values);
           }
