@@ -6,17 +6,30 @@ const { useState, useMemo, useCallback, useEffect } = React;
 
 let _liveNextId = 1000;
 
-function extractVariableNames(state) {
-  const names = [];
+function extractVariables(state) {
+  const vars = [];
   for (const obs of (state.observatrons || [])) {
     for (const spike of (obs.spikes || [])) {
-      const meaning = spike['/meaning']?.key?.[0];
-      if (meaning && !names.includes(meaning)) {
-        names.push(meaning);
-      }
+      const name = spike['/meaning']?.key?.[0] || spike['/context']?.anchor?.[0] || '';
+      if (!name) continue;
+
+      const mBit = (spike['/meaning']?.key?.length > 0);
+      const sBit = (spike['/structure']?.key?.length > 0);
+      const cBit = (spike['/context']?.timestamp?.length > 0);
+
+      vars.push({
+        id: _liveNextId++,
+        name,
+        facets: [mBit, sBit, cBit],
+        facetValues: [
+          mBit ? (spike['/meaning']?.value?.[0] || '') : '',
+          sBit ? (spike['/structure']?.value?.[0] || '') : '',
+          cBit ? (spike['/context']?.channel?.[0] || '') : '',
+        ],
+      });
     }
   }
-  return names;
+  return vars;
 }
 
 function LiveCalculator() {
@@ -27,26 +40,7 @@ function LiveCalculator() {
     let conn = null;
     window.CGP.connectToState({
       onUpdate(state, seq) {
-        const names = extractVariableNames(state);
-
-        if (names.length === 0) {
-          setVariables([]);
-          return;
-        }
-
-        setVariables((prev) => {
-          const existingNames = new Set(prev.map((v) => v.name));
-          const newVars = names
-            .filter((name) => !existingNames.has(name))
-            .map((name) => ({
-              id: _liveNextId++,
-              name,
-              facets: [false, false, false],
-              facetValues: ["", "", ""],
-            }));
-          if (newVars.length === 0) return prev;
-          return [...prev, ...newVars];
-        });
+        setVariables(extractVariables(state));
       },
     }).then((c) => { conn = c; });
     return () => { if (conn) conn.close(); };

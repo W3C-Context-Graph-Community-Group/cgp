@@ -87,6 +87,10 @@ export class ZoomControl {
   }
 
   _handleWheel(e) {
+    // Only zoom when the mouse is over the canvas area
+    const wrap = document.getElementById('canvas-wrap');
+    if (wrap && !wrap.contains(e.target)) return;
+
     // Scroll down (positive deltaY) → zoom out (increase value)
     // Scroll up (negative deltaY) → zoom in (decrease value)
     const delta = Math.sign(e.deltaY) * this._step * 3;

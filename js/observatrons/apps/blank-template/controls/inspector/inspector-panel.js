@@ -111,7 +111,7 @@ export class InspectorPanel {
     // spike URL header
     const urlLabel = document.createElement('div');
     urlLabel.className = 'inspector-panel__field-label';
-    urlLabel.textContent = 'Spike';
+    urlLabel.textContent = 'URL';
     this._body.appendChild(urlLabel);
 
     const urlValue = document.createElement('div');
@@ -206,9 +206,30 @@ export class InspectorPanel {
   }
 
   _renderJson() {
+    const json = JSON.stringify(this._facets, null, 2);
+
+    const toolbar = document.createElement('div');
+    toolbar.className = 'inspector-panel__json-toolbar';
+
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'inspector-panel__copy-btn';
+    copyBtn.textContent = 'Copy';
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(json).then(() => {
+        copyBtn.textContent = '\u2713';
+        copyBtn.classList.add('inspector-panel__copy-btn--ok');
+        setTimeout(() => {
+          copyBtn.textContent = 'Copy';
+          copyBtn.classList.remove('inspector-panel__copy-btn--ok');
+        }, 1500);
+      });
+    });
+    toolbar.appendChild(copyBtn);
+    this._body.appendChild(toolbar);
+
     const pre = document.createElement('pre');
     pre.className = 'inspector-panel__json';
-    pre.textContent = JSON.stringify(this._facets, null, 2);
+    pre.textContent = json;
     this._body.appendChild(pre);
   }
 

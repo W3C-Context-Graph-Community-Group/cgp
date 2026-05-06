@@ -502,3 +502,42 @@ The unifying claim: most architectural failure isn't bad code or hard problems. 
 This is an engineering inspection tool. The operator is the engineer who runs the server, owns the data, and is the only audience for anything the system surfaces. There are no other users, no privacy boundaries between participants, no need to filter what one component reveals to another. Everything the system observes is, by construction, available to the operator.
 
 Apply this when evaluating design choices: if a proposed mechanism exists to restrict visibility between parts of the system, ask what audience it is protecting against. If the answer is "no one," delete the mechanism.
+
+---
+
+# META SCHEMA
+
+* system                              [URL: `cgp:/s/<s>`]
+   * observatron                      [URL: `cgp:/s/<s>/o/<o>`]
+      * /data
+         * value                      (object — the cgp-* attributes from activation)
+      * /meaning
+         * key                        (array — symbols)
+         * value                      (array — definitions, parallel to key)
+      * /structure
+         * key                        (array — schema kinds, e.g. "json-schema-2020-12")
+         * value                      (array — schema bodies, parallel to key)
+      * /context
+         * anchor                     (array — URL of the node this row is about)
+         * source                     (array — URL of the observatron that emitted)
+         * channel                    (array — URL of the event channel)
+         * timestamp                  (array — ISO 8601 UTC)
+         * key                        (array — claim key URL)
+         * value                      (array — claim value URL or literal)
+
+      * spike                         [URL: `cgp:/s/<s>/o/<o>/c/state-change/<n>/a/<n>/p/<n>`]
+         * /data
+            * value                   (array — the data the spike carries)
+         * /meaning
+            * key                     (array — symbols)
+            * value                   (array — definitions, parallel to key)
+         * /structure
+            * key                     (array — schema kinds)
+            * value                   (array — schema bodies, parallel to key)
+         * /context
+            * anchor                  (array — URL of this spike, repeated per row)
+            * source                  (array — URL of parent observatron, repeated per row)
+            * channel                 (array — URL of the event channel, repeated per row)
+            * timestamp               (array — ISO 8601 UTC, repeated per row)
+            * key                     (array — claim key URL, varies per row)
+            * value                   (array — claim value URL or literal, varies per row)
