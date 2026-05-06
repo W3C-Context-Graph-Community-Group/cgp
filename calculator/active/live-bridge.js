@@ -1,21 +1,19 @@
-// live-bridge.js — Subscribes to BroadcastChannel 'cgp-state' and renders
+// live-bridge.js — Subscribes to canonical StateClient pipeline and renders
 // a Dark Fraction calculator whose variables come from the demo's path spikes.
 // Reuses DFC.* components and math from dark-fraction-core.js.
 
 const { useState, useMemo, useCallback, useEffect } = React;
 
-// Regex for path-spike URLs: cgp:/s/<id>/o/<id>/c/<channel>/<n>/a/<n>/p/<n>
-const PATH_SPIKE_RE = /^cgp:\/s\/[^/]+\/o\/[^/]+\/c\/[^/]+\/\d+\/a\/\d+\/p\/\d+$/;
-
 let _liveNextId = 1000;
 
 function extractVariableNames(state) {
   const names = [];
-  for (const [url, facets] of Object.entries(state)) {
-    if (!PATH_SPIKE_RE.test(url)) continue;
-    const meaning = facets?.["/meaning"]?.meaning?.[0];
-    if (meaning && !names.includes(meaning)) {
-      names.push(meaning);
+  for (const obs of (state.observatrons || [])) {
+    for (const spike of (obs.spikes || [])) {
+      const meaning = spike['/meaning']?.key?.[0];
+      if (meaning && !names.includes(meaning)) {
+        names.push(meaning);
+      }
     }
   }
   return names;
@@ -24,38 +22,34 @@ function extractVariableNames(state) {
 function LiveCalculator() {
   const [variables, setVariables] = useState([]);
 
-  // Subscribe to BroadcastChannel for cross-tab state sync
+  // Subscribe to canonical state pipeline via StateClient
   useEffect(() => {
-    const bc = new BroadcastChannel('cgp-state');
-    bc.onmessage = (msg) => {
-      if (msg.data?.type !== 'cgp-state-change') return;
-      const state = msg.data.state;
-      if (!state) return;
+    let conn = null;
+    window.CGP.connectToState({
+      onUpdate(state, seq) {
+        const names = extractVariableNames(state);
 
-      const names = extractVariableNames(state);
+        if (names.length === 0) {
+          setVariables([]);
+          return;
+        }
 
-      // No path spikes means the demo was reset (page reload) — clear variables
-      if (names.length === 0) {
-        setVariables([]);
-        return;
-      }
-
-      // Add new variables, deduplicating by name to preserve existing facet state
-      setVariables((prev) => {
-        const existingNames = new Set(prev.map((v) => v.name));
-        const newVars = names
-          .filter((name) => !existingNames.has(name))
-          .map((name) => ({
-            id: _liveNextId++,
-            name,
-            facets: [false, false, false],
-            facetValues: ["", "", ""],
-          }));
-        if (newVars.length === 0) return prev;
-        return [...prev, ...newVars];
-      });
-    };
-    return () => bc.close();
+        setVariables((prev) => {
+          const existingNames = new Set(prev.map((v) => v.name));
+          const newVars = names
+            .filter((name) => !existingNames.has(name))
+            .map((name) => ({
+              id: _liveNextId++,
+              name,
+              facets: [false, false, false],
+              facetValues: ["", "", ""],
+            }));
+          if (newVars.length === 0) return prev;
+          return [...prev, ...newVars];
+        });
+      },
+    }).then((c) => { conn = c; });
+    return () => { if (conn) conn.close(); };
   }, []);
 
   const m = variables.length;

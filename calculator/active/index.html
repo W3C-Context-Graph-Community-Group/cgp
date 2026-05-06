@@ -18,6 +18,10 @@
   <script src="/js/nav/sidebar.js" data-active="calculator-live"></script>
 
   <div id="root"></div>
+  <script type="module">
+    import { connectToState } from '/lib/state-client/StateClient.js';
+    window.CGP = { connectToState };
+  </script>
   <script type="text/babel" data-type="module" src="../dark-fraction-core.js"></script>
   <script type="text/babel" data-type="module" src="live-bridge.js"></script>
   <script type="text/babel" data-type="module">

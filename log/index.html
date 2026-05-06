@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CGP Event Log</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: monospace;
+      padding: 48px 16px 16px;
+      line-height: 1.4;
+    }
+    #status {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 8px 16px;
+      background: #f5f5f5;
+      border-bottom: 1px solid #ccc;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    #entries { list-style: none; }
+    #entries li {
+      margin-bottom: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid #ddd;
+    }
+    #entries li h3 {
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+    #entries li .meta {
+      font-size: 12px;
+      margin-bottom: 4px;
+    }
+    #entries li pre {
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .rejected { color: #b00; }
+  </style>
+</head>
+<body>
+
+  <div id="status">Loading&hellip;</div>
+  <ul id="entries"></ul>
+
+  <script type="module">
+    import { connectToLog } from '/lib/state-client/LogClient.js';
+
+    const statusEl  = document.getElementById('status');
+    const entriesEl = document.getElementById('entries');
+
+    function renderEntry(entry) {
+      const li = document.createElement('li');
+      if (!entry.accepted) li.classList.add('rejected');
+
+      const h = document.createElement('h3');
+      h.textContent = `#${entry.seq} ${entry.channel}`;
+      li.appendChild(h);
+
+      const meta = document.createElement('div');
+      meta.className = 'meta';
+      const status = entry.accepted ? 'accepted' : 'rejected';
+      meta.textContent = `from: ${entry.from} | ${entry.timestamp} | ${status}`;
+      li.appendChild(meta);
+
+      const pre = document.createElement('pre');
+      pre.textContent = JSON.stringify(entry.payload, null, 2);
+      li.appendChild(pre);
+
+      entriesEl.prepend(li);
+    }
+
+    statusEl.textContent = 'Loading\u2026';
+
+    await connectToLog({
+      onEntry(entry, seq) {
+        renderEntry(entry);
+        statusEl.textContent = `Connected (seq ${seq})`;
+      },
+    });
+  </script>
+
+</body>
+</html>

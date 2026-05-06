@@ -1,0 +1,103 @@
+.fiber-bundle-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fiber-bundle-control__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.fiber-bundle-control__label {
+  font-family: var(--cp-font);
+  font-size: 10px;
+  color: var(--cp-text-muted);
+}
+
+.fiber-bundle-control__toggle {
+  background: none;
+  border: 1px solid var(--cp-accent-dim);
+  color: var(--cp-text-muted);
+  font-family: var(--cp-font);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  border-radius: 6px;
+  padding: 4px 12px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.fiber-bundle-control__toggle:hover {
+  color: var(--cp-accent);
+  border-color: var(--cp-accent);
+}
+
+.fiber-bundle-control__toggle--on {
+  color: #fff;
+  border-color: var(--cp-accent);
+  background: var(--cp-accent-dim);
+}
+
+.fiber-bundle-control__toggle:active {
+  opacity: 0.7;
+}
+
+/* ── Slider row ── */
+
+.fiber-bundle-control__slider-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 3px 0;
+}
+
+.fiber-bundle-control__slider-label {
+  font-family: var(--cp-font);
+  font-size: 10px;
+  color: var(--cp-text-muted);
+}
+
+.fiber-bundle-control__slider-value {
+  font-family: var(--cp-font);
+  font-variant-numeric: tabular-nums;
+  font-size: 11px;
+  color: var(--cp-accent);
+  min-width: 20px;
+  text-align: right;
+}
+
+.fiber-bundle-control__slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.12);
+  outline: none;
+  cursor: pointer;
+}
+
+.fiber-bundle-control__slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--cp-accent);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  cursor: grab;
+}
+
+.fiber-bundle-control__slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--cp-accent);
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  cursor: grab;
+}

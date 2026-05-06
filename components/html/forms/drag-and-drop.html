@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CGP Drag-and-Drop Demo</title>
+  <link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
   <style>
     .drop-zone {
       width: 320px;
@@ -15,6 +16,7 @@
       justify-content: center;
       font-family: sans-serif;
       color: #555;
+      transition: opacity 0.5s;
     }
   </style>
 </head>
@@ -29,6 +31,35 @@
   </div>
 
   <script type="module" src="../../../lib/cgp-runtime/runtime.js"></script>
+
+  <script>
+    var zone = document.querySelector('.drop-zone');
+    var defaultText = zone.textContent;
+
+    zone.addEventListener('cgp:dropzone', function (e) {
+      var state = e.detail.state;
+
+      if (state === 'active') {
+        zone.style.borderStyle = 'solid';
+        zone.style.background = '#e8e8e8';
+      } else if (state === 'neutral') {
+        zone.style.borderStyle = 'dashed';
+        zone.style.background = '';
+      } else if (state === 'done') {
+        zone.style.borderStyle = 'dashed';
+        zone.style.background = '';
+        zone.textContent = '\u2713 ' + e.detail.count + ' spikes emitted';
+        zone.style.opacity = '1';
+        setTimeout(function () {
+          zone.style.opacity = '0';
+          setTimeout(function () {
+            zone.style.opacity = '1';
+            zone.textContent = defaultText;
+          }, 500);
+        }, 2000);
+      }
+    });
+  </script>
 
 </body>
 </html>

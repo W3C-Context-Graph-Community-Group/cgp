@@ -115,7 +115,7 @@ var CardPage = (function () {
     config.cards.forEach(function (card) {
       var a = document.createElement('a');
       a.href = card.href;
-      a.target = '_blank';
+      if (card.target) a.target = card.target;
       a.className = 'card';
 
       var cardColor = config.accent || card.color || '#333';

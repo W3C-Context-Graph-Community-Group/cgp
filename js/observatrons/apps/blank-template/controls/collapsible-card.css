@@ -1,0 +1,93 @@
+/* ── CollapsibleCard ── */
+
+.collapsible-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ── Header ── */
+
+.collapsible-card__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+}
+
+.collapsible-card__label {
+  font-family: var(--cp-font);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--cp-text-muted);
+}
+
+.collapsible-card__toggle {
+  margin-left: auto;
+  background: none;
+  border: 1px solid var(--cp-border);
+  color: var(--cp-text-muted);
+  font-size: 14px;
+  line-height: 1;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-family: var(--cp-font);
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.collapsible-card__toggle:hover {
+  color: var(--cp-accent);
+  border-color: var(--cp-accent);
+}
+
+/* ── Body ── */
+
+.collapsible-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: hidden;
+  padding-bottom: 6px;
+  /* animate both axes */
+  max-height: 600px;
+  max-width: 1200px;
+  opacity: 1;
+  transition: max-height 0.25s ease, max-width 0.25s ease, opacity 0.2s ease;
+}
+
+/* row layout variant */
+.collapsible-card--row > .collapsible-card__body {
+  flex-direction: row;
+  gap: 12px;
+}
+
+.collapsible-card--row > .collapsible-card__body > .collapsible-card__section {
+  flex: 1;
+  min-width: 0;
+}
+
+/* make range controls more compact inside row cards */
+.collapsible-card--row .range-control {
+  min-width: 110px;
+}
+
+/* ── Collapsed state ── */
+
+.collapsible-card--collapsed > .collapsible-card__body {
+  max-height: 0;
+  max-width: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.collapsible-card--collapsed > .collapsible-card__header .collapsible-card__label {
+  color: var(--cp-accent);
+}

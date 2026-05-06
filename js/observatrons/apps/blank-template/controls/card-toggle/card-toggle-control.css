@@ -1,0 +1,41 @@
+.card-toggle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.card-toggle__btn {
+  background: none;
+  border: 1px solid var(--cp-accent-dim);
+  color: var(--cp-text-muted);
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 6px 8px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+
+.card-toggle__btn:hover {
+  color: var(--cp-accent);
+  border-color: var(--cp-accent);
+}
+
+.card-toggle__btn--active {
+  color: var(--cp-accent);
+  border-color: var(--cp-accent-dim);
+  background: rgba(155, 135, 255, 0.08);
+}
+
+.card-toggle__btn:active {
+  opacity: 0.7;
+}
+
+.card-toggle__label {
+  font-family: var(--cp-font);
+  font-size: 9px;
+  letter-spacing: 0.3px;
+  color: var(--cp-text-muted);
+}

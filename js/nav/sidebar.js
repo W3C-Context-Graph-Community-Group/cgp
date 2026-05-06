@@ -70,7 +70,8 @@
     { id: 'observatrons', label: 'Observatrons', href: '/observatrons/' },
     { id: 'docs',         label: 'Docs',         href: '/docs/' },
     { id: 'components',   label: 'Components',   href: '/components/' },
-    { id: 'liquid_hypergraph', label: 'Liquid Hypergraph', href: '/liquid_hypergraph/' }
+    { id: 'liquid_hypergraph', label: 'Liquid Hypergraph', href: '/liquid_hypergraph/' },
+    { id: 'inspectors',       label: 'Inspectors',       href: '/inspectors/' }
   ];
 
   var linksHtml = links.map(function (link) {

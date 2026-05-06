@@ -1,0 +1,13 @@
+.claims-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.claims-control__empty {
+  font-family: var(--cp-font);
+  font-size: 10px;
+  color: var(--cp-text-muted);
+  opacity: 0.5;
+  font-style: italic;
+}

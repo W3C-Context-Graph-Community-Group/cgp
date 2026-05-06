@@ -1,0 +1,63 @@
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.filter-group__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.filter-group__toggle {
+  background: none;
+  border: 1px solid var(--cp-border);
+  color: var(--cp-text-muted);
+  font-size: 14px;
+  line-height: 1;
+  width: 22px;
+  height: 22px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--cp-font);
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.filter-group__toggle:hover {
+  color: var(--cp-accent);
+  border-color: var(--cp-accent);
+}
+
+.filter-group__row {
+  display: flex;
+  gap: 12px;
+  overflow: hidden;
+  transition: max-height 0.25s ease, opacity 0.2s ease;
+  max-height: 200px;
+  opacity: 1;
+}
+
+.filter-group--collapsed .filter-group__row {
+  max-height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.filter-group--collapsed .filter-group__header .control-panel__label {
+  color: var(--cp-accent);
+}
+
+.filter-group__cell {
+  flex: 1;
+  min-width: 0;
+}
+
+/* make range controls more compact inside the group */
+.filter-group__cell .range-control {
+  min-width: 110px;
+}

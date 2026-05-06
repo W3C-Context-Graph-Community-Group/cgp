@@ -1,0 +1,34 @@
+.cs-control {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.cs-control__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cs-control__btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 4px;
+  color: var(--cp-text-muted);
+  font-family: var(--cp-font);
+  font-size: 11px;
+  padding: 4px 10px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.cs-control__btn:hover {
+  color: var(--cp-text);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.cs-control__btn--active {
+  color: var(--cp-accent);
+  border-color: var(--cp-accent);
+  box-shadow: 0 0 0 1px var(--cp-accent);
+}

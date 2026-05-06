@@ -3,9 +3,17 @@ import { fileURLToPath } from 'url';
 import { dirname, join, extname } from 'path';
 import { createServer } from 'http';
 import { readFile, readdir, stat } from 'fs/promises';
+import { WebSocketServer } from 'ws';
+import WebSocket from 'ws';
+import { EventBus } from './lib/event-bus/client.js';
+import { LogService } from './lib/log-service/LogService.js';
+import { StateService } from './lib/state-service/StateService.js';
+
+globalThis.WebSocket = WebSocket;
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const PORT = parseInt(process.env.PORT || '3000', 10);
+const BUS_PORT = process.env.BUS_PORT || '8080';
 
 /* ── MIME types ── */
 const MIME = {
@@ -44,6 +52,10 @@ async function listMdFiles(dir, base = '') {
   return files;
 }
 
+/* ── Services (populated once bus is ready) ── */
+let logService = null;
+let stateService = null;
+
 /* ── HTTP server ── */
 const server = createServer(async (req, res) => {
   const url = new URL(req.url, `http://localhost:${PORT}`);
@@ -58,6 +70,30 @@ const server = createServer(async (req, res) => {
     } catch (err) {
       res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8' });
       res.end(JSON.stringify({ error: err.message }));
+    }
+    return;
+  }
+
+  /* API endpoint: event log */
+  if (pathname === '/api/log') {
+    const since = parseInt(url.searchParams.get('since') || '0', 10) || 0;
+    const entries = logService ? logService.getLog({ since }) : [];
+    res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+    res.end(JSON.stringify({ entries }));
+    return;
+  }
+
+  /* API endpoint: hypergraph state snapshot */
+  if (pathname === '/api/state') {
+    if (stateService) {
+      const atParam = url.searchParams.get('at');
+      const at = atParam !== null ? parseInt(atParam, 10) : logService.maxSeq;
+      const state = stateService.computeStateAt(at);
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ state, seq: at }));
+    } else {
+      res.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+      res.end(JSON.stringify({ state: { observatrons: [] }, seq: 0 }));
     }
     return;
   }
@@ -91,21 +127,67 @@ const server = createServer(async (req, res) => {
   }
 });
 
+/* ── WebSocket /ws/updates endpoint ── */
+const wsUpdates = new WebSocketServer({ noServer: true });
+
+server.on('upgrade', (req, socket, head) => {
+  const { pathname } = new URL(req.url, `http://localhost:${PORT}`);
+  if (pathname === '/ws/updates') {
+    wsUpdates.handleUpgrade(req, socket, head, (ws) => {
+      wsUpdates.emit('connection', ws, req);
+    });
+  } else {
+    socket.destroy();
+  }
+});
+
+wsUpdates.on('connection', (ws) => {
+  ws.once('message', (raw) => {
+    if (!logService) { ws.close(); return; }
+    let msg;
+    try { msg = JSON.parse(raw.toString()); } catch { ws.close(); return; }
+    const since = typeof msg.since === 'number' ? msg.since : 0;
+
+    // Replay entries with seq > since
+    for (const entry of logService.getLog({ since })) {
+      if (ws.readyState === 1) ws.send(JSON.stringify(entry));
+    }
+
+    // Subscribe to future entries
+    const unsub = logService.subscribe((entry) => {
+      if (ws.readyState === 1) ws.send(JSON.stringify(entry));
+    });
+
+    ws.on('close', unsub);
+  });
+});
+
 server.listen(PORT, () => {
   console.log(`HTTP serving from ${ROOT} on http://localhost:${PORT}`);
 });
 
 /* ── Start event bus (WebSocket on port 8080) ── */
-const bus = spawn('node', ['lib/event-bus/server.js'], {
+const busProc = spawn('node', ['lib/event-bus/server.js'], {
   cwd: ROOT,
-  stdio: 'inherit',
-  env: { ...process.env, BUS_PORT: '8080' },
+  stdio: ['ignore', 'pipe', 'inherit'],
+  env: { ...process.env, BUS_PORT: BUS_PORT },
 });
 
-bus.on('close', (code) => {
+busProc.stdout.on('data', async (chunk) => {
+  process.stdout.write(chunk);
+  if (!logService && chunk.toString().includes('listening')) {
+    const bus = new EventBus(`ws://localhost:${BUS_PORT}`);
+    await bus.ready();
+    logService = new LogService(bus);
+    stateService = new StateService(logService);
+    console.log('Log service and state service connected to bus');
+  }
+});
+
+busProc.on('close', (code) => {
   server.close();
   process.exit(code);
 });
 
-process.on('SIGINT',  () => { bus.kill(); server.close(); process.exit(0); });
-process.on('SIGTERM', () => { bus.kill(); server.close(); process.exit(0); });
+process.on('SIGINT',  () => { busProc.kill(); server.close(); process.exit(0); });
+process.on('SIGTERM', () => { busProc.kill(); server.close(); process.exit(0); });

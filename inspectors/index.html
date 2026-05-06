@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="../favicon.svg" />
+</head>
+<body>
+<script src="/js/nav/card-page.js"></script>
+<script>
+CardPage({
+  title: "⊙ Inspectors",
+  subtitle: "Live debugging and monitoring tools",
+  pageTitle: "Inspectors — Dark Fraction",
+  accent: "#8B5CF6",
+  sidebar: { active: "inspectors", accent: "#8B5CF6" },
+  cards: [
+    { icon: "▤", title: "Log", desc: "Live event log streaming from the CGP event bus.", href: "/log/", color: "#8B5CF6", target: "_blank" },
+    { icon: "◈", title: "State", desc: "Aggregated hypergraph state view of observatrons and spikes.", href: "/state/", color: "#8B5CF6", target: "_blank" }
+  ]
+});
+</script>
+</body>
+</html>

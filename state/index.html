@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CGP Hypergraph State</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: monospace;
+      padding: 48px 16px 16px;
+      line-height: 1.4;
+    }
+    #status {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      padding: 8px 16px;
+      background: #f5f5f5;
+      border-bottom: 1px solid #ccc;
+      font-family: monospace;
+      font-size: 14px;
+    }
+    #view {
+      font-size: 12px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+  </style>
+</head>
+<body>
+
+  <div id="status">Loading&hellip;</div>
+  <pre id="view"></pre>
+
+  <script type="module">
+    import { connectToState } from '/lib/state-client/StateClient.js';
+
+    const statusEl = document.getElementById('status');
+    const viewEl   = document.getElementById('view');
+
+    statusEl.textContent = 'Loading\u2026';
+
+    await connectToState({
+      onUpdate(state, seq) {
+        viewEl.textContent = JSON.stringify(state, null, 2);
+        statusEl.textContent = `Connected (seq ${seq})`;
+      },
+    });
+  </script>
+
+</body>
+</html>
