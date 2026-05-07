@@ -82,50 +82,69 @@ export class CgpFacetView {
   _renderDataSection(facetData) {
     const section = this._createSection('Data', 'data');
 
-    if (!facetData || Object.keys(facetData).length === 0) {
+    if (!facetData || facetData.value == null) {
+      section.body.innerHTML = '<span class="lh-facet__dim">\u2014</span>';
+    } else {
+      const payload = facetData.value;
+
+      if (typeof payload === 'string' || typeof payload === 'number') {
+        const span = document.createElement('span');
+        span.textContent = String(payload);
+        section.body.appendChild(span);
+
+      } else if (Array.isArray(payload)) {
+        const ul = document.createElement('ul');
+        ul.className = 'lh-facet__list';
+        for (const item of payload) {
+          const li = document.createElement('li');
+          li.textContent = String(item);
+          ul.appendChild(li);
+        }
+        section.body.appendChild(ul);
+
+      } else if (typeof payload === 'object' && payload !== null) {
+        const table = document.createElement('table');
+        table.className = 'lh-facet__table';
+        const tbody = document.createElement('tbody');
+        for (const [k, v] of Object.entries(payload)) {
+          const tr = document.createElement('tr');
+          const tdKey = document.createElement('td');
+          tdKey.textContent = k;
+          const tdVal = document.createElement('td');
+          tdVal.textContent = typeof v === 'object' ? JSON.stringify(v) : String(v);
+          tr.appendChild(tdKey);
+          tr.appendChild(tdVal);
+          tbody.appendChild(tr);
+        }
+        table.appendChild(tbody);
+        section.body.appendChild(table);
+      }
+    }
+
+    this._container.appendChild(section.el);
+  }
+
+  _renderMeaningSection(facetData) {
+    const section = this._createSection('Meaning', 'meaning');
+
+    const keys = facetData?.key || [];
+    const values = facetData?.value || [];
+    if (keys.length === 0 && values.length === 0) {
       section.body.innerHTML = '<span class="lh-facet__dim">\u2014</span>';
     } else {
       const table = document.createElement('table');
       table.className = 'lh-facet__table';
-
       const thead = document.createElement('thead');
-      thead.innerHTML = '<tr><th>Key</th><th>Value</th></tr>';
+      thead.innerHTML = '<tr><th>Symbol</th><th>Meaning</th></tr>';
       table.appendChild(thead);
-
       const tbody = document.createElement('tbody');
-      for (const [key, value] of Object.entries(facetData)) {
+      const len = Math.max(keys.length, values.length);
+      for (let i = 0; i < len; i++) {
         const tr = document.createElement('tr');
         const tdKey = document.createElement('td');
-        tdKey.textContent = key;
+        tdKey.textContent = keys[i] || '';
         const tdVal = document.createElement('td');
-
-        if (Array.isArray(value)) {
-          const hasCode = value.some(v => typeof v === 'string' && (v.includes('<') || v.includes('\n')));
-          if (hasCode) {
-            for (const item of value) {
-              const pre = document.createElement('pre');
-              pre.className = 'lh-facet__code';
-              const code = document.createElement('code');
-              code.innerHTML = this._highlightHtml(String(item));
-              pre.appendChild(code);
-              tdVal.appendChild(pre);
-            }
-          } else if (value.length > 1) {
-            const pre = document.createElement('pre');
-            pre.className = 'lh-facet__code';
-            const code = document.createElement('code');
-            code.textContent = value.join('\n');
-            pre.appendChild(code);
-            tdVal.appendChild(pre);
-          } else {
-            tdVal.textContent = value.join(', ');
-          }
-        } else if (this._isUrl(String(value))) {
-          tdVal.appendChild(this._createUrlLink(String(value)));
-        } else {
-          tdVal.textContent = String(value);
-        }
-
+        tdVal.textContent = values[i] || '';
         tr.appendChild(tdKey);
         tr.appendChild(tdVal);
         tbody.appendChild(tr);
@@ -137,112 +156,33 @@ export class CgpFacetView {
     this._container.appendChild(section.el);
   }
 
-  _renderMeaningSection(facetData) {
-    const section = this._createSection('Meaning', 'meaning');
-
-    if (!facetData || Object.keys(facetData).length === 0) {
-      section.body.innerHTML = '<span class="lh-facet__dim">\u2014</span>';
-    } else {
-      const symbols = facetData.symbol || facetData.meaning || [];
-      const meanings = facetData.meaning || facetData.symbol || [];
-      const table = document.createElement('table');
-      table.className = 'lh-facet__table';
-
-      const thead = document.createElement('thead');
-      thead.innerHTML = '<tr><th>Symbol</th><th>Meaning</th></tr>';
-      table.appendChild(thead);
-
-      const tbody = document.createElement('tbody');
-      // If both arrays exist as separate keys, pair them
-      if (facetData.symbol && facetData.meaning) {
-        const len = Math.max(facetData.symbol.length, facetData.meaning.length);
-        for (let i = 0; i < len; i++) {
-          const tr = document.createElement('tr');
-          const tdSym = document.createElement('td');
-          tdSym.textContent = facetData.symbol[i] || '';
-          const tdMean = document.createElement('td');
-          tdMean.textContent = facetData.meaning[i] || '';
-          tr.appendChild(tdSym);
-          tr.appendChild(tdMean);
-          tbody.appendChild(tr);
-        }
-      } else {
-        // Single-key fallback: show key-value pairs
-        for (const [key, value] of Object.entries(facetData)) {
-          const tr = document.createElement('tr');
-          const tdKey = document.createElement('td');
-          tdKey.textContent = key;
-          const tdVal = document.createElement('td');
-          tdVal.textContent = Array.isArray(value) ? value.join(', ') : String(value);
-          tr.appendChild(tdKey);
-          tr.appendChild(tdVal);
-          tbody.appendChild(tr);
-        }
-      }
-      table.appendChild(tbody);
-      section.body.appendChild(table);
-    }
-
-    this._container.appendChild(section.el);
-  }
-
   _renderStructureSection(facetData) {
     const section = this._createSection('Structure', 'structure');
 
-    if (!facetData || Object.keys(facetData).length === 0) {
+    const keys = facetData?.key || [];
+    const values = facetData?.value || [];
+    if (keys.length === 0 && values.length === 0) {
       section.body.innerHTML = '<span class="lh-facet__dim">\u2014</span>';
     } else {
-      const keys = facetData['constraint-key'] || [];
-      const values = facetData['constraint-value'] || [];
-
-      if (keys.length > 0) {
-        const table = document.createElement('table');
-        table.className = 'lh-facet__table';
-
-        const thead = document.createElement('thead');
-        thead.innerHTML = '<tr><th>Constraint</th><th>Value</th></tr>';
-        table.appendChild(thead);
-
-        const tbody = document.createElement('tbody');
-        const len = Math.max(keys.length, values.length);
-        for (let i = 0; i < len; i++) {
-          const tr = document.createElement('tr');
-          const tdKey = document.createElement('td');
-          tdKey.textContent = keys[i] || '';
-          const tdVal = document.createElement('td');
-          const val = values[i];
-          if (this._isUrl(String(val))) {
-            tdVal.appendChild(this._createUrlLink(String(val)));
-          } else {
-            tdVal.textContent = String(val || '');
-          }
-          tr.appendChild(tdKey);
-          tr.appendChild(tdVal);
-          tbody.appendChild(tr);
-        }
-        table.appendChild(tbody);
-        section.body.appendChild(table);
-      } else {
-        // Fallback: show all key-value pairs
-        const table = document.createElement('table');
-        table.className = 'lh-facet__table';
-        const thead = document.createElement('thead');
-        thead.innerHTML = '<tr><th>Key</th><th>Value</th></tr>';
-        table.appendChild(thead);
-        const tbody = document.createElement('tbody');
-        for (const [key, value] of Object.entries(facetData)) {
-          const tr = document.createElement('tr');
-          const tdKey = document.createElement('td');
-          tdKey.textContent = key;
-          const tdVal = document.createElement('td');
-          tdVal.textContent = Array.isArray(value) ? value.join(', ') : String(value);
-          tr.appendChild(tdKey);
-          tr.appendChild(tdVal);
-          tbody.appendChild(tr);
-        }
-        table.appendChild(tbody);
-        section.body.appendChild(table);
+      const table = document.createElement('table');
+      table.className = 'lh-facet__table';
+      const thead = document.createElement('thead');
+      thead.innerHTML = '<tr><th>Key</th><th>Value</th></tr>';
+      table.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      const len = Math.max(keys.length, values.length);
+      for (let i = 0; i < len; i++) {
+        const tr = document.createElement('tr');
+        const tdKey = document.createElement('td');
+        tdKey.textContent = keys[i] || '';
+        const tdVal = document.createElement('td');
+        tdVal.textContent = values[i] || '';
+        tr.appendChild(tdKey);
+        tr.appendChild(tdVal);
+        tbody.appendChild(tr);
       }
+      table.appendChild(tbody);
+      section.body.appendChild(table);
     }
 
     this._container.appendChild(section.el);

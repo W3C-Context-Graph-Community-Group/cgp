@@ -325,6 +325,116 @@ Alpha defines exactly two events.
 
 No other events exist in alpha. The drag-and-drop scenario produces only these two kinds of `/context` row at minting time.
 
+
+---
+
+## Intent-Driven Spike Minting
+
+The runtime does not decide what counts as a spike. The intent map does.
+
+When an observatron is instantiated, its `cgp-intent` attribute carries a 
+declaration of what payloads, crossing the watched boundary, become spikes. 
+This declaration is the only thing that determines which boundary crossings 
+mint spikes and which do not.
+
+The runtime's job is uniform across all components: watch the boundary, 
+evaluate every crossing against the intent's triggers, and mint one spike 
+per matched trigger.
+
+### The intent map
+
+The `cgp-intent` attribute is a JSON object declaring the triggers under 
+which a spike is minted. The shape:
+
+- Keys group triggers by category (e.g. `error`, `warning`, `info`).
+- Each trigger declares a `type` (`regex`, `match`, etc.), a payload 
+  pattern, and a `handler` describing what the spike should carry.
+
+The runtime does not interpret handlers. The handler's contents are 
+recorded verbatim in the spike's `/data`, the trigger's category and 
+identity in the spike's `/context`. Consumers downstream (forms, 
+diagnostics, UIs) read the handler to know what to do — the runtime 
+just witnesses.
+
+### Channel uniformity
+
+Every spike minted by intent matching emits on a single channel:
+
+`cgp:/r/events/intent-matched.md`
+
+There is no per-component event vocabulary. Drag-and-drop, textarea, 
+and any future component that uses the intent-map mechanism all emit 
+on this one channel. What distinguishes their spikes is what the 
+intent declared, recorded in `/context` and `/data`.
+
+### Components without intent maps
+
+Some components in alpha may emit spikes without going through an 
+intent map (e.g. drag-and-drop's `csv-dropped` event in early alpha). 
+These are legacy. The intent-driven path is the canonical one going 
+forward; legacy components either get migrated or stay as documented 
+exceptions.
+
+
+## Intent Map
+
+The `cgp-intent` attribute carries an **intent map**: the declaration of what 
+payloads, crossing the watched boundary, become spikes.
+
+### Three frames
+
+An intent map has three top-level keys:
+
+- `program-intent` — what the developers want to handle (validation, routing, error states)
+- `user-intent` — what the user is trying to do (mentions, shortcuts, disambiguation)
+- `business-intent` — what the business needs to extract or enforce (analytics, compliance, audit)
+
+The same shape applies to frontend intent maps (declared in HTML) and backend 
+intent maps (declared in service config). Each frame is independent: a single 
+boundary crossing can match rules in any combination of frames, producing one 
+spike per match.
+
+### Rule structure
+
+Each frame contains an array of rules. Each rule contains an array of triggers.
+
+```json
+{
+  "program-intent": {
+    "rules": [
+      {
+        "rule-id": "pii-detection",
+        "triggers": [
+          {
+            "id": "email-regex",
+            "predicate": { "type": "regex", "value": "..." },
+            "handler": { "block-submit": true, "message": "..." }
+          }
+        ]
+      }
+    ]
+  },
+  "user-intent": { "rules": [...] },
+  "business-intent": { "rules": [...] }
+}
+```
+
+Field meanings:
+
+- `rule-id` — identifier for the rule within its frame
+- `triggers[].id` — identifier for the trigger within the rule
+- `triggers[].predicate` — the matching condition (e.g. regex, string match)
+- `triggers[].handler` — what the spike should carry; recorded verbatim in `/data`
+
+### Channel
+
+Every spike minted by intent matching emits on a single channel:
+
+`cgp:/r/events/intent-matched.md`
+
+The spike's `/context` records which frame, rule, and trigger produced it. 
+Components do not introduce per-component event channels.
+
 ---
 
 ## Canonical Complete Spike

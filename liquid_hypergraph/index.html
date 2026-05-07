@@ -12,7 +12,7 @@
   <link rel="stylesheet" href="css/analytics.css" />
 </head>
 <body>
-  <script src="../sidebar.js" data-active="liquid_hypergraph" data-accent="#F59E0B"></script>
+  <script src="/js/nav/sidebar.js" data-active="liquid_hypergraph" data-accent="#F59E0B"></script>
 
   <!-- Header -->
   <div class="lh-header">
@@ -75,7 +75,7 @@
           }
         }
         treeView.render();
-        analyticsView.refreshGraphSummary();
+        analyticsView.setState(state.observatrons || []);
       },
     });
 

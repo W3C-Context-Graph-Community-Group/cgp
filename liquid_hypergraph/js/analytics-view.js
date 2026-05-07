@@ -7,6 +7,7 @@ export class CgpAnalyticsView {
     this._resolver = resolver;
     this._container = container;
     this._selectedUrl = null;
+    this._observatrons = [];
   }
 
   selectUrl(url) {
@@ -14,7 +15,8 @@ export class CgpAnalyticsView {
     this._render();
   }
 
-  refreshGraphSummary() {
+  setState(observatrons) {
+    this._observatrons = observatrons;
     this._render();
   }
 
@@ -23,82 +25,61 @@ export class CgpAnalyticsView {
   _render() {
     this._container.innerHTML = '';
 
-    if (this._selectedUrl) {
-      this._renderSelectedNodeDelta();
-      this._renderSubtreeDelta();
-    } else {
-      const empty = document.createElement('div');
-      empty.className = 'lh-analytics__empty';
-      empty.textContent = 'Select a node';
-      this._container.appendChild(empty);
-    }
+    this._renderDelta();
 
     this._renderTrendPlaceholder();
     this._renderDistPlaceholder();
     this._renderGraphSummary();
   }
 
-  _renderSelectedNodeDelta() {
+  _renderDelta() {
+    // Resolve which observatron is selected
+    let obsData = null;
+    if (this._selectedUrl) {
+      obsData = this._observatrons.find(o => o.url === this._selectedUrl) || null;
+      if (!obsData) {
+        obsData = this._observatrons.find(o =>
+          o.url && this._selectedUrl.startsWith(o.url + '/')
+        ) || null;
+      }
+    }
+    if (!obsData) return;
+
+    const spikes = obsData.spikes || [];
+    const m = spikes.length;
+    let r = 0;
+    for (const spike of spikes) {
+      // /data: populated if value array has content
+      const data = spike['/data'];
+      if (data && Array.isArray(data.value) && data.value.length > 0) r++;
+      // /meaning: populated if key array has content
+      const meaning = spike['/meaning'];
+      if (meaning && Array.isArray(meaning.key) && meaning.key.length > 0) r++;
+      // /structure: populated if key array has content
+      const structure = spike['/structure'];
+      if (structure && Array.isArray(structure.key) && structure.key.length > 0) r++;
+    }
+
+    const result = computeDarkFraction(m, r);
+
     const section = document.createElement('div');
     section.className = 'lh-analytics__section';
 
     const title = document.createElement('div');
     title.className = 'lh-analytics__section-title';
-    title.textContent = 'Selected Node \u03b4';
+    title.textContent = '\u03b4';
     section.appendChild(title);
 
-    const m = 1;
-    const r = this._countVerifiedFacets(this._selectedUrl);
-    const result = computeDarkFraction(m, r);
-
-    // Gauge
     const gaugeWrap = document.createElement('div');
     gaugeWrap.className = 'lh-analytics__gauge';
     gaugeWrap.appendChild(createGauge(result.delta, result.phi, 140));
     section.appendChild(gaugeWrap);
 
-    // Stats
     const stats = document.createElement('div');
     stats.className = 'lh-analytics__stat';
-    stats.appendChild(this._createStatCard('m', String(m)));
+    stats.appendChild(this._createStatCard('M', String(m)));
     stats.appendChild(this._createStatCard('n', String(result.n)));
-    stats.appendChild(this._createStatCard('r', String(r)));
-    section.appendChild(stats);
-
-    this._container.appendChild(section);
-  }
-
-  _renderSubtreeDelta() {
-    const subtreeUrls = this._getSubtreeUrls(this._selectedUrl);
-    if (subtreeUrls.length <= 1) return; // No subtree beyond the node itself
-
-    const section = document.createElement('div');
-    section.className = 'lh-analytics__section';
-
-    const title = document.createElement('div');
-    title.className = 'lh-analytics__section-title';
-    title.textContent = 'Subtree \u03b4';
-    section.appendChild(title);
-
-    const m = subtreeUrls.length;
-    let r = 0;
-    for (const url of subtreeUrls) {
-      r += this._countVerifiedFacets(url);
-    }
-    const result = computeDarkFraction(m, r);
-
-    // Gauge
-    const gaugeWrap = document.createElement('div');
-    gaugeWrap.className = 'lh-analytics__gauge';
-    gaugeWrap.appendChild(createGauge(result.delta, result.phi, 120));
-    section.appendChild(gaugeWrap);
-
-    // Stats
-    const stats = document.createElement('div');
-    stats.className = 'lh-analytics__stat';
-    stats.appendChild(this._createStatCard('URLs', String(m)));
-    stats.appendChild(this._createStatCard('n', String(result.n)));
-    stats.appendChild(this._createStatCard('r', String(r)));
+    stats.appendChild(this._createStatCard('R', String(r)));
     section.appendChild(stats);
 
     this._container.appendChild(section);
@@ -232,44 +213,6 @@ export class CgpAnalyticsView {
     card.appendChild(labelEl);
 
     return card;
-  }
-
-  _countVerifiedFacets(url) {
-    const data = this._resolver.resolve(url);
-    if (!data) return 0;
-    const facets = data.facets || data;
-    let count = 0;
-
-    // /meaning: any array with length > 0
-    const meaning = facets['/meaning'];
-    if (meaning && typeof meaning === 'object') {
-      for (const val of Object.values(meaning)) {
-        if (Array.isArray(val) && val.length > 0) { count++; break; }
-      }
-    }
-
-    // /structure: any array with length > 0
-    const structure = facets['/structure'];
-    if (structure && typeof structure === 'object') {
-      for (const val of Object.values(structure)) {
-        if (Array.isArray(val) && val.length > 0) { count++; break; }
-      }
-    }
-
-    // /context: any array with length > 0
-    const context = facets['/context'];
-    if (context && typeof context === 'object') {
-      for (const val of Object.values(context)) {
-        if (Array.isArray(val) && val.length > 0) { count++; break; }
-      }
-    }
-
-    return count;
-  }
-
-  _getSubtreeUrls(url) {
-    const prefix = url.endsWith('/') ? url : url + '/';
-    return this._resolver.urls().filter(u => u === url || u.startsWith(prefix));
   }
 
   _inferKind(url) {
