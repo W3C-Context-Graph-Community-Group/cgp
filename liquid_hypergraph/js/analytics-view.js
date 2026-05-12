@@ -49,9 +49,9 @@ export class CgpAnalyticsView {
     const m = spikes.length;
     let r = 0;
     for (const spike of spikes) {
-      // /data: populated if value array has content
+      // /data: populated if value has content
       const data = spike['/data'];
-      if (data && Array.isArray(data.value) && data.value.length > 0) r++;
+      if (data && data.value != null && data.value !== '') r++;
       // /meaning: populated if key array has content
       const meaning = spike['/meaning'];
       if (meaning && Array.isArray(meaning.key) && meaning.key.length > 0) r++;

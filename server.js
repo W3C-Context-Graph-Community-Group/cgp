@@ -181,6 +181,7 @@ busProc.stdout.on('data', async (chunk) => {
     logService = new LogService(bus);
     stateService = new StateService(logService);
     console.log('Log service and state service connected to bus');
+    console.log('\n\x1b[1;34mTo test for drift, run `npm test`\x1b[0m\n');
   }
 });
 

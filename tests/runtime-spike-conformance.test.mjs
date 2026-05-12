@@ -37,8 +37,7 @@ const SAMPLE = {
   systemId: '0',
   observatronId: '0',
   columnIndex: 0,
-  columnHeader: 'Date',
-  columnValues: ['2026-01-15', '2026-01-16', '2026-01-17'],
+  columnValue: 'Date',
 };
 
 // ── Helpers ──────────────────────────────────────────────
@@ -110,12 +109,10 @@ async function run() {
   const spike = buildSpikeEntry(SAMPLE);
 
   // Structural checks
-  assert(Array.isArray(spike['/data'].value),
-    '/data/value is an array (columnValues)');
-  assert(spike['/data'].value.length === 3,
-    '/data/value has 3 elements');
-  assert(spike['/data'].value[0] === '2026-01-15',
-    '/data/value[0] is verbatim');
+  assert(typeof spike['/data'].value === 'string',
+    '/data/value is a string');
+  assert(spike['/data'].value === 'Date',
+    '/data/value is the column header');
   assert(spike['/meaning'].key.length === 0 && spike['/meaning'].value.length === 0,
     '/meaning is empty arrays');
   assert(spike['/structure'].key.length === 0 && spike['/structure'].value.length === 0,
@@ -187,9 +184,9 @@ async function run() {
   console.log('\nTest 3: 3-column CSV — 3 spikes, all validate and broadcast');
 
   const columns = [
-    { header: 'Date',    values: ['2026-01-15', '2026-01-16'] },
-    { header: 'Product', values: ['Widget', 'Gadget'] },
-    { header: 'Amount',  values: ['100', '200'] },
+    { value: 'Date' },
+    { value: 'Product' },
+    { value: 'Amount' },
   ];
 
   for (let i = 0; i < columns.length; i++) {
@@ -197,12 +194,11 @@ async function run() {
       systemId: '0',
       observatronId: '0',
       columnIndex: i,
-      columnHeader: columns[i].header,
-      columnValues: columns[i].values,
+      columnValue: columns[i].value,
     });
 
     const v = schemas.validate(CHANNEL, s);
-    assert(v.valid, `Column ${i} (${columns[i].header}) passes schema`);
+    assert(v.valid, `Column ${i} passes schema`);
     if (!v.valid) {
       console.log('  Schema errors:', JSON.stringify(v.errors, null, 2));
     }

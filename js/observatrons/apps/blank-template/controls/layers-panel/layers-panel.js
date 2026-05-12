@@ -27,7 +27,7 @@ export class LayersPanel {
     this._resizer = null;
     this._selectedId = null;
     this._selectedSpikeKey = null; // "obsId:spikeIndex"
-    this._expandedObs = new Set();
+    this._collapsedObs = new Set();
   }
 
   mount() {
