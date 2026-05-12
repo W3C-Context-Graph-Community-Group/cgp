@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="../../../favicon.svg" />
+</head>
+<body>
+<script src="/js/nav/component-page.js"></script>
+<script>
+ComponentPage({
+  title: "textarea",
+  subtitle: "CGP HTML form component",
+  pageTitle: "textarea — Components",
+  accent: "#F59E0B",
+  sidebar: { active: "components", accent: "#F59E0B" },
+  backHref: "./",
+  html: '<div cgp-id="cgp:/r/components/html/forms/textarea.md"\n' +
+        '     cgp-system-id="0"\n' +
+        '     cgp-observatron-id="0"\n' +
+        '     cgp-target=".textarea"\n' +
+        '     cgp-intent=\'{"program-intent":{"rules":[{"rule-id":"pii-detection","triggers":[{"id":"email-regex","predicate":{"type":"regex","value":"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\\\.[a-zA-Z]{2,}"},"handler":{"block-submit":true,"message":"PII detected: remove email address before submitting."}}]}]},"user-intent":{"rules":[]},"business-intent":{"rules":[]}}\'>\n' +
+        '  <textarea class="textarea" placeholder="Type here..."></textarea>\n' +
+        '</div>',
+  markdownSrc: "/r/components/html/forms/textarea.md",
+  loadRuntime: true
+});
+</script>
+</body>
+</html>
