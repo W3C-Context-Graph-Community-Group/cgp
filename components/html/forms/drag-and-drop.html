@@ -1,12 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>CGP Drag-and-Drop Demo</title>
-  <link rel="icon" type="image/svg+xml" href="../../../favicon.svg">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="../../../favicon.svg" />
   <style>
-    .drop-zone {
+    #drop-zone {
       width: 320px;
       height: 160px;
       border: 2px dashed #888;
@@ -16,50 +15,53 @@
       justify-content: center;
       font-family: sans-serif;
       color: #555;
-      transition: opacity 0.5s;
+    }
+    #drop-zone:hover,
+    #drop-zone.drag-active {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: #F59E0B;
+      color: #B45309;
     }
   </style>
 </head>
 <body>
-
-  <div cgp-id="cgp:/r/components/html/forms/drag-and-drop.md"
-       cgp-system-id="0"
-       cgp-observatron-id="0"
-       cgp-target=".drop-zone"
-       cgp-intent='{"cgp-policy":"cgp:/r/policies/parse-csv-headers.md"}'>
-    <div class="drop-zone">Drop CSV here</div>
-  </div>
-
-  <script type="module" src="../../../lib/cgp-runtime/runtime.js"></script>
-
-  <script>
-    var zone = document.querySelector('.drop-zone');
-    var defaultText = zone.textContent;
-
-    zone.addEventListener('cgp:dropzone', function (e) {
-      var state = e.detail.state;
-
-      if (state === 'active') {
-        zone.style.borderStyle = 'solid';
-        zone.style.background = '#e8e8e8';
-      } else if (state === 'neutral') {
-        zone.style.borderStyle = 'dashed';
-        zone.style.background = '';
-      } else if (state === 'done') {
-        zone.style.borderStyle = 'dashed';
-        zone.style.background = '';
-        zone.textContent = '\u2713 ' + e.detail.count + ' spikes emitted';
-        zone.style.opacity = '1';
-        setTimeout(function () {
-          zone.style.opacity = '0';
-          setTimeout(function () {
-            zone.style.opacity = '1';
-            zone.textContent = defaultText;
-          }, 500);
-        }, 2000);
-      }
-    });
-  </script>
-
+<script src="/js/nav/component-page.js"></script>
+<script>
+ComponentPage({
+  title: "drag-and-drop",
+  subtitle: "CGP HTML form component",
+  pageTitle: "drag-and-drop — Components",
+  accent: "#F59E0B",
+  sidebar: { active: "components", accent: "#F59E0B" },
+  backHref: "./",
+  html: '<div cgp-id="cgp:/r/components/html/forms/drag-and-drop.md"\n' +
+        '     cgp-system-id="0"\n' +
+        '     cgp-observatron-id="0"\n' +
+        '     cgp-target="#drop-zone"\n' +
+        '     cgp-intent=\'{"cgp-policy":"cgp:/r/policies/parse-csv-headers.md"}\'>\n' +
+        '  <div id="drop-zone">Drop CSV here</div>\n' +
+        '</div>',
+  markdownSrc: "/r/components/html/forms/drag-and-drop.md",
+  loadRuntime: true
+});
+</script>
+<script>
+(function () {
+  var dropEl = document.getElementById('drop-zone');
+  if (!dropEl) return;
+  dropEl.addEventListener('cgp:dropzone', function (e) {
+    var state = e.detail.state;
+    if (state === 'active') {
+      dropEl.classList.add('drag-active');
+    } else {
+      dropEl.classList.remove('drag-active');
+    }
+    if (state === 'done') {
+      dropEl.textContent = '\u2713 ' + e.detail.count + ' spikes emitted';
+      setTimeout(function () { dropEl.textContent = 'Drop CSV here'; }, 2000);
+    }
+  });
+})();
+</script>
 </body>
 </html>

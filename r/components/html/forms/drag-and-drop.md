@@ -4,23 +4,25 @@
 
 **Reference URL:** `cgp:/r/components/html/forms/drag-and-drop.md`
 
-A custom HTML element that wraps a drop-target region. When the host page declares it, an observatron is minted. When a CSV is dropped on the target, the observatron mints one spike per column.
+An HTML element stamped with `cgp-id` that wraps a drop-target region. When the host page declares it, an observatron is minted. When a CSV is dropped on the target, the observatron mints one spike per column.
 
 ## HTML form
 
 ```html
-<cgp-html-forms-drag-and-drop
-  cgp-system-id="0"
-  cgp-observatron-id="0"
-  cgp-target=".drop-zone"
-  cgp-intent="{...}">
-</cgp-html-forms-drag-and-drop>
+<div cgp-id="cgp:/r/components/html/forms/drag-and-drop.md"
+     cgp-system-id="0"
+     cgp-observatron-id="0"
+     cgp-target=".drop-zone"
+     cgp-intent="{...}">
+  <div class="drop-zone">Drop CSV here</div>
+</div>
 ```
 
 ## Attributes
 
 | Attribute | Required | Purpose |
 |---|---|---|
+| `cgp-id` | yes | Reference URL identifying the component type. The runtime queries `[cgp-id]` to discover CGP elements. |
 | `cgp-system-id` | yes | Identifier for the system scope (auto-assigned if absent). |
 | `cgp-observatron-id` | yes | Identifier for the observatron within the system (auto-assigned if absent). |
 | `cgp-target` | yes | CSS selector identifying the inner drop-target element. |

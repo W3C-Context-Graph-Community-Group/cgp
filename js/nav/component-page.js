@@ -42,8 +42,8 @@ var ComponentPage = (function () {
       '  min-width: 300px;',
       '  flex-shrink: 0;',
       '  padding: 32px 24px;',
-      '  border-right: 1px solid #e0e0e0;',
-      '  background: #fafafa;',
+      '  border-right: none;',
+      '  background: transparent;',
       '  position: sticky;',
       '  top: 54px;',
       '  height: calc(100vh - 54px);',
@@ -66,12 +66,11 @@ var ComponentPage = (function () {
 
       '.cp-live__card {',
       '  background: #fff;',
-      '  border: 1px solid #e0e0e0;',
+      '  border: none;',
       '  border-radius: 12px;',
       '  padding: 40px 32px;',
       '  width: 100%;',
       '  max-width: 500px;',
-      '  box-shadow: 0 1px 4px rgba(0,0,0,0.04);',
       '}',
 
       /* ── Right panel: documentation ── */
@@ -117,7 +116,6 @@ var ComponentPage = (function () {
       '  font-size: 12.5px;',
       '  line-height: 1.6;',
       '  margin: 0;',
-      '  border-left: 3px solid ' + accent + ';',
       '}',
 
       '.cp-source-block pre code {',
