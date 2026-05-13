@@ -38,8 +38,8 @@ var ComponentPage = (function () {
 
       /* ── Left panel: live preview ── */
       '.cp-live {',
-      '  width: 40%;',
-      '  min-width: 300px;',
+      '  width: 50%;',
+      '  min-width: 200px;',
       '  flex-shrink: 0;',
       '  padding: 32px 24px;',
       '  border-right: none;',
@@ -50,7 +50,30 @@ var ComponentPage = (function () {
       '  overflow-y: auto;',
       '  display: flex;',
       '  flex-direction: column;',
-      '  align-items: center;',
+      '  align-items: flex-start;',
+      '}',
+
+      /* ── Resizer handle ── */
+      '.cp-resizer {',
+      '  width: 6px;',
+      '  flex-shrink: 0;',
+      '  cursor: col-resize;',
+      '  background: transparent;',
+      '  position: relative;',
+      '  z-index: 10;',
+      '  transition: background .15s;',
+      '}',
+      '.cp-resizer::after {',
+      '  content: "";',
+      '  position: absolute;',
+      '  top: 0; bottom: 0;',
+      '  left: 2px;',
+      '  width: 2px;',
+      '  background: #ddd;',
+      '  transition: background .15s;',
+      '}',
+      '.cp-resizer:hover::after, .cp-resizer.active::after {',
+      '  background: #999;',
       '}',
 
       '.cp-live__label {',
@@ -65,7 +88,7 @@ var ComponentPage = (function () {
       '}',
 
       '.cp-live__card {',
-      '  background: #fff;',
+      '  background: transparent;',
       '  border: none;',
       '  border-radius: 12px;',
       '  padding: 40px 32px;',
@@ -76,7 +99,7 @@ var ComponentPage = (function () {
       /* ── Right panel: documentation ── */
       '.cp-doc {',
       '  flex: 1;',
-      '  min-width: 0;',
+      '  min-width: 200px;',
       '  padding: 32px 48px 80px;',
       '  overflow-y: auto;',
       '}',
@@ -257,8 +280,9 @@ var ComponentPage = (function () {
       /* ── Responsive ── */
       '@media (max-width: 768px) {',
       '  .cp-layout { flex-direction: column; }',
+      '  .cp-resizer { display: none; }',
       '  .cp-live {',
-      '    width: 100%;',
+      '    width: 100% !important;',
       '    position: static;',
       '    height: auto;',
       '    border-right: none;',
@@ -361,12 +385,49 @@ var ComponentPage = (function () {
 
     docPanel.appendChild(docCard);
 
-    // 10. Assemble layout
+    // 10. Resizer between panels
+    var resizer = document.createElement('div');
+    resizer.className = 'cp-resizer';
+
+    // 11. Assemble layout
     layout.appendChild(livePanel);
+    layout.appendChild(resizer);
     layout.appendChild(docPanel);
     document.body.appendChild(layout);
 
-    // 11. Load highlight.js, then highlight source block
+    // 12. Resizer drag logic
+    (function () {
+      var dragging = false;
+
+      resizer.addEventListener('pointerdown', function (e) {
+        e.preventDefault();
+        dragging = true;
+        resizer.classList.add('active');
+        resizer.setPointerCapture(e.pointerId);
+        document.body.style.cursor = 'col-resize';
+        document.body.style.userSelect = 'none';
+      });
+
+      resizer.addEventListener('pointermove', function (e) {
+        if (!dragging) return;
+        var layoutRect = layout.getBoundingClientRect();
+        var offset = e.clientX - layoutRect.left;
+        var pct = (offset / layoutRect.width) * 100;
+        pct = Math.max(15, Math.min(85, pct));
+        livePanel.style.width = pct + '%';
+      });
+
+      resizer.addEventListener('pointerup', function (e) {
+        if (!dragging) return;
+        dragging = false;
+        resizer.classList.remove('active');
+        resizer.releasePointerCapture(e.pointerId);
+        document.body.style.cursor = '';
+        document.body.style.userSelect = '';
+      });
+    })();
+
+    // 13. Load highlight.js, then highlight source block
     var hljsScript = document.createElement('script');
     hljsScript.src = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js';
     hljsScript.onload = function () {
@@ -383,7 +444,7 @@ var ComponentPage = (function () {
     };
     document.head.appendChild(hljsScript);
 
-    // 12. Load marked.js, then fetch and render markdown
+    // 14. Load marked.js, then fetch and render markdown
     if (config.markdownSrc) {
       var markedScript = document.createElement('script');
       markedScript.src = 'https://cdn.jsdelivr.net/npm/marked/marked.min.js';
@@ -409,7 +470,7 @@ var ComponentPage = (function () {
       document.head.appendChild(markedScript);
     }
 
-    // 13. Optionally load CGP runtime
+    // 15. Optionally load CGP runtime
     if (config.loadRuntime) {
       var runtimeScript = document.createElement('script');
       runtimeScript.type = 'module';
