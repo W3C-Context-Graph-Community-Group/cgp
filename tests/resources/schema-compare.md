@@ -2,11 +2,14 @@
 
 This document is the schema for the Context Graph Protocol (CGP), a the core contribution of the W3C Context Graph Community Group.
 
+The protocol describes interfaces, not cargo. Like HTML describing a page's structure without storing pixels, like TCP describing connections without storing payloads, CGP describes what crosses a boundary — the columns, the fields, the declared shape — and leaves the values that flow through to the application's own storage. δ measures how well the interface is described; it does not measure how well individual values are annotated.
+
 ## Repository Structure
 
 - `cgp`:    The repo root directory
 - `/s`:     Observatron network using the Four Facet Model
 - `/r`:     Reference URLS not on the Observatron Network
+- `/e/`     Executable. Canonical specifications written as runnable code. 
 
 ---
 
@@ -16,21 +19,56 @@ The repo is laid out as a static tree of files. Every URL in the protocol resolv
 
 ```
 <repo-root>/
-└── r/                                  
-    ├── meta/
-    │   ├── schema.md
-    ├── schemas/
-    │   ├── observatron.schema.json
-    │   └── spike.schema.json
-    ├── keys/    
-    │   ├── task.md
-    │   └── component-type.md
-    ├── tasks/    
-    │   └── csv-dropped.md
-    └── components/        
+├── r/
+│   ├── meta/
+│   │   └── schema.md
+│   ├── schemas/
+│   │   ├── observatron.schema.json
+│   │   └── spike.schema.json
+│   ├── keys/
+│   │   ├── task.md
+│   │   ├── component-type.md
+│   │   ├── frame.md
+│   │   ├── gate.md
+│   │   └── trigger.md
+│   ├── frames/
+│   │   ├── program-intent.md
+│   │   ├── user-intent.md
+│   │   └── business-intent.md
+│   ├── gates/
+│   │   ├── halt.md
+│   │   ├── ask.md
+│   │   └── act.md
+│   ├── triggers/
+│   │   └── console-log-on-keyup.md
+│   ├── tasks/
+│   │   └── intent-matched.md
+│   ├── events/
+│   │   ├── activated.md
+│   │   └── intent-matched.md
+│   ├── components/
+│   │   └── html/
+│   │       └── forms/
+│   │           ├── textarea.md
+│   │           └── drag-and-drop.md
+│   └── intents/
+│       └── components/
+│           └── html/
+│               └── forms/
+│                   ├── textarea.md
+│                   └── drag-and-drop.md
+├── intents/
+│   └── components/
+│       └── html/
+│           └── forms/
+│               ├── textarea.json
+│               └── drag-and-drop.json
+└── handlers/
+    └── components/
         └── html/
             └── forms/
-                └── drag-and-drop.md
+                ├── textarea.js
+                └── drag-and-drop.js
 ```
 
 Sub-directories under a catalog are fine wherever the structure helps a human navigate (e.g., `components/html/forms/drag-and-drop.md`). The protocol does not care about category structure; URLs just resolve to file paths.
@@ -52,7 +90,7 @@ That is the entire rule. No fragment handling, no defaulting, no transformation,
 |---|---|
 | `cgp:/r/keys/task.md` | `/r/keys/task.md` |
 | `cgp:/r/components/html/forms/drag-and-drop.md` | `/r/components/html/forms/drag-and-drop.md` |
-| `cgp:/r/tasks/csv-dropped.md` | `/r/tasks/csv-dropped.md` |
+| `cgp:/r/tasks/intent-matched.md` | `/r/tasks/intent-matched.md` |
 | `cgp:/r/policy.json` | `/r/policy.json` |
 
 Resolution works on any static-file host: GitHub, GitLab, S3, raw filesystem.
@@ -321,12 +359,14 @@ Alpha defines exactly two events.
 | Event URL | Fired when |
 |---|---|
 | `cgp:/r/events/activated.md` | An observatron is instantiated. Announces the observatron exists. |
-| `cgp:/r/events/csv-dropped.md` | A CSV file is dropped on the watched boundary. Mints one spike per column. |
+| `cgp:/r/events/intent-matched.md` | A trigger in the observatron's intent map fired. Mints one spike per matched trigger, carrying the trigger's handler payload in `/data`. |
 
-No other events exist in alpha. The drag-and-drop scenario produces only these two kinds of `/context` row at minting time.
+These are the two protocol-level event channels in alpha. All intent-driven spikes flow through `intent-matched`; the spike's `/context` rows record which frame, gate, and trigger produced it.
+
 
 ---
 
+---
 ## Canonical Complete Spike
 
 A complete, minimal spike with all four facets populated. This is the reference shape every implementer should validate against.
@@ -334,46 +374,64 @@ A complete, minimal spike with all four facets populated. This is the reference 
 ```json
 {
   "/data": {
-    "value": ["2026-01-15", "2026-01-16", "2026-01-17"]
+    "value": "hello"
   },
   "/meaning": {
-    "key": ["Date"],
-    "value": ["The trade execution date in ISO format."]
+    "key": [],
+    "value": []
   },
   "/structure": {
-    "key": ["json-schema-2020-12"],
-    "value": ["{\"type\":\"array\",\"items\":{\"type\":\"string\",\"format\":\"date\"}}"]
+    "key": [],
+    "value": []
   },
   "/context": {
     "anchor": [
+      "cgp:/s/0/o/0/c/state-change/0/a/0/p/0",
+      "cgp:/s/0/o/0/c/state-change/0/a/0/p/0",
+      "cgp:/s/0/o/0/c/state-change/0/a/0/p/0",
       "cgp:/s/0/o/0/c/state-change/0/a/0/p/0",
       "cgp:/s/0/o/0/c/state-change/0/a/0/p/0"
     ],
     "source": [
       "cgp:/s/0/o/0",
+      "cgp:/s/0/o/0",
+      "cgp:/s/0/o/0",
+      "cgp:/s/0/o/0",
       "cgp:/s/0/o/0"
     ],
     "channel": [
-      "cgp:/r/events/csv-dropped.md",
-      "cgp:/r/events/csv-dropped.md"
+      "cgp:/r/events/intent-matched.md",
+      "cgp:/r/events/intent-matched.md",
+      "cgp:/r/events/intent-matched.md",
+      "cgp:/r/events/intent-matched.md",
+      "cgp:/r/events/intent-matched.md"
     ],
     "timestamp": [
+      "2026-05-02T13:23:24.034Z",
+      "2026-05-02T13:23:24.034Z",
+      "2026-05-02T13:23:24.034Z",
       "2026-05-02T13:23:24.034Z",
       "2026-05-02T13:23:24.034Z"
     ],
     "key": [
       "cgp:/r/keys/task.md",
-      "cgp:/r/keys/component-type.md"
+      "cgp:/r/keys/component-type.md",
+      "cgp:/r/keys/frame.md",
+      "cgp:/r/keys/gate.md",
+      "cgp:/r/keys/trigger.md"
     ],
     "value": [
-      "cgp:/r/tasks/csv-dropped.md",
-      "cgp:/r/components/html/forms/drag-and-drop.md"
+      "cgp:/r/tasks/intent-matched.md",
+      "cgp:/r/components/html/forms/textarea.md",
+      "cgp:/r/frames/program-intent.md",
+      "cgp:/r/gates/act.md",
+      "cgp:/r/triggers/console-log-on-keyup.md"
     ]
   }
 }
 ```
 
-This spike represents a single CSV column ("Date") that crossed a drag-and-drop boundary under the `csv-dropped` task. `anchor` is the spike's URL; `source` is the observatron that minted it.
+This spike represents a single keyup event on a textarea — the user typed, the value `"hello"` crossed the watched boundary, and the runtime matched the textarea intent's `console-log-on-keyup` trigger. `/data` carries the value verbatim per the No-Parsing Rule. `/meaning` and `/structure` are empty because no external work has declared interpretations against this payload yet. `/context` records, in five rows: the task (`intent-matched`), the component-type (`textarea`), the frame (`program-intent`), the gate (`act`), and the trigger (`console-log-on-keyup`). Every value in `/context` resolves to a real `/r/` file. `anchor` is the spike's URL; `source` is the observatron that minted it.
 
 ---
 
@@ -387,13 +445,13 @@ An observatron minted when an HTML element instantiates it. The instantiation pa
     "value": {
       "cgp-system-id": "0",
       "cgp-observatron-id": "0",
-      "cgp-target": ".drop-zone",
-      "cgp-intent": "{\"cgp-policy\":\"cgp:/r/policies/parse-csv-headers.md\"}"
+      "cgp-target": ".textarea",
+      "cgp-intent": "cgp:/r/intents/components/html/forms/textarea.md"
     }
   },
   "/meaning": {
-    "key": ["watches CSV columns"],
-    "value": ["Observes drag-and-drop CSV files and emits one spike per column."]
+    "key": ["watches textarea input"],
+    "value": ["Observes a textarea element and mints spikes when triggers in its intent map fire."]
   },
   "/structure": {
     "key": [],
@@ -415,14 +473,16 @@ An observatron minted when an HTML element instantiates it. The instantiation pa
       "cgp:/r/keys/component-type.md"
     ],
     "value": [
-      "cgp:/r/tasks/csv-dropped.md",
-      "cgp:/r/components/html/forms/drag-and-drop.md"
+      "cgp:/r/tasks/activated.md",
+      "cgp:/r/components/html/forms/textarea.md"
     ]
   }
 }
 ```
 
-The observatron exists because instantiation parameters crossed the boundary. `/data` carries those parameters verbatim — every key prefixed with `cgp-`, every value as a raw string. `/meaning` describes what the observatron does in human terms. `/structure` is empty because no schema for instantiation parameters has been declared. `/context` records the activation event under the `csv-dropped` task and the `html/forms/drag-and-drop` component-type. Note that `anchor` and `source` are equal — the observatron is writing about itself.
+The observatron exists because instantiation parameters crossed the boundary. `/data` carries those parameters verbatim — every key prefixed with `cgp-`, every value as a raw string. The `cgp-intent` value is a URL pointing at the intent's `/r/` declaration; the runtime fetches that doc to load the JSON intent map and handler. `/meaning` describes what the observatron does in human terms. `/structure` is empty because no schema for instantiation parameters has been declared. `/context` records the activation event under the activated task and the textarea component-type. Note that anchor and source are equal — the observatron is writing about itself.
+
+(Note: this assumes you'll create a `/r/tasks/activated.md` file. If you'd rather just reuse `cgp:/r/tasks/intent-matched.md` or leave the task ambiguous, your call. activated is the cleaner name for the observatron-minting task.)
 
 ---
 
@@ -433,11 +493,12 @@ The observatron exists because instantiation parameters crossed the boundary. `/
 The host page declares the observatron:
 
 ```html
-<div cgp-id="cgp:/r/components/html/forms/drag-and-drop.md"
+<div cgp-id="cgp:/r/components/html/forms/textarea.md"
      cgp-system-id="0"
      cgp-observatron-id="0"
-     cgp-target=".drop-zone"
-     cgp-intent="{...}">
+     cgp-target=".textarea"
+     cgp-intent="cgp:/r/intents/components/html/forms/textarea.md">
+  <textarea class="textarea"></textarea>
 </div>
 ```
 
@@ -447,17 +508,17 @@ The attribute set crosses the boundary verbatim and becomes the observatron's `/
 {
   "/data": {
     "value": {
-      "cgp-id": "cgp:/r/components/html/forms/drag-and-drop.md",
+      "cgp-id": "cgp:/r/components/html/forms/textarea.md",
       "cgp-system-id": "0",
       "cgp-observatron-id": "0",
-      "cgp-target": ".drop-zone",
-      "cgp-intent": "{...}"
+      "cgp-target": ".textarea",
+      "cgp-intent": "cgp:/r/intents/components/html/forms/textarea.md"
     }
   }
 }
 ```
 
-The `cgp-intent` value is the literal HTML attribute string, not a parsed object.
+The `cgp-intent` value is a URL string, recorded verbatim. The runtime fetches that URL to resolve the intent's JSON map and handler.
 
 ### The `cgp-id` Stamping Model
 
@@ -502,3 +563,444 @@ The unifying claim: most architectural failure isn't bad code or hard problems. 
 This is an engineering inspection tool. The operator is the engineer who runs the server, owns the data, and is the only audience for anything the system surfaces. There are no other users, no privacy boundaries between participants, no need to filter what one component reveals to another. Everything the system observes is, by construction, available to the operator.
 
 Apply this when evaluating design choices: if a proposed mechanism exists to restrict visibility between parts of the system, ask what audience it is protecting against. If the answer is "no one," delete the mechanism.
+
+---
+
+# META SCHEMA
+
+* system                              [URL: `cgp:/s/<s>`]
+   * observatron                      [URL: `cgp:/s/<s>/o/<o>`]
+      * /data
+         * value                      (object — the cgp-* attributes from activation)
+      * /meaning
+         * key                        (array — symbols)
+         * value                      (array — definitions, parallel to key)
+      * /structure
+         * key                        (array — schema kinds, e.g. "json-schema-2020-12")
+         * value                      (array — schema bodies, parallel to key)
+      * /context
+         * anchor                     (array — URL of the node this row is about)
+         * source                     (array — URL of the observatron that emitted)
+         * channel                    (array — URL of the event channel)
+         * timestamp                  (array — ISO 8601 UTC)
+         * key                        (array — claim key URL)
+         * value                      (array — claim value URL or literal)
+
+      * spike                         [URL: `cgp:/s/<s>/o/<o>/c/state-change/<n>/a/<n>/p/<n>`]
+         * /data
+            * value                   (array — the data the spike carries)
+         * /meaning
+            * key                     (array — symbols)
+            * value                   (array — definitions, parallel to key)
+         * /structure
+            * key                     (array — schema kinds)
+            * value                   (array — schema bodies, parallel to key)
+         * /context
+            * anchor                  (array — URL of this spike, repeated per row)
+            * source                  (array — URL of parent observatron, repeated per row)
+            * channel                 (array — URL of the event channel, repeated per row)
+            * timestamp               (array — ISO 8601 UTC, repeated per row)
+            * key                     (array — claim key URL, varies per row)
+            * value                   (array — claim value URL or literal, varies per row)
+
+---
+
+## CRITICAL TO REMEMBER
+
+### The /data facet is canonical; /meaning, /structure, and /context are projected onto it.
+
+The four facets are not symmetric. /data records what crossed the
+boundary. The other three are interpretive layers added over /data
+by external work — by humans declaring meaning, by consumers
+declaring schemas, by the runtime recording the crossing event in
+/context.
+
+Empty /meaning and empty /structure are the honest state until
+external work has been done. The runtime must not populate them
+from /data's content. Doing so fabricates interpretation that has
+not actually been done, and corrupts the metric (dark fraction)
+that measures how much interpretation has been done.
+
+### The runtime never infers meaning from data.
+
+A CSV's first row may look like column headers. A blob of text may
+look like JSON. A number may look like a timestamp. The runtime
+sees none of this. It records what crossed verbatim and stops.
+
+Pattern-matching on data content to populate /meaning, /structure,
+or /context is forbidden. If meaning needs to be declared, an
+external agent declares it — by writing to /meaning explicitly,
+or by an intent map's handler producing it as a spike's payload.
+The runtime is a witness, not an interpreter.
+
+### Spike granularity is an intent decision, not a protocol law.
+How a payload becomes spikes is declared in the intent map. One
+boundary crossing can mint one spike (the whole payload), N spikes
+(one per part the intent carved out), or zero spikes (no trigger
+matched).
+When no intent is declared, the runtime mints no spikes. Spikes
+exist only because a trigger in the intent map fired and named the
+handler payload they should carry. The protocol works however the
+declared intent says — there is no implicit default behavior.
+
+### Don't promote data to meaning.
+
+The most common failure mode of the no-parsing rule is subtle:
+treating part of the data as "labels" or "names" and routing them
+to /meaning while the rest goes to /data. This is data partitioning
+disguised as meaning extraction.
+
+If the boundary crossing carried the bytes, those bytes are /data.
+If the bytes happen to be human-readable names, that does not make
+them meaning. Meaning is a separate facet populated by separate
+work. Resist the urge to "be helpful" by pre-populating /meaning
+from /data — the helpfulness is a violation.
+
+
+
+
+----
+# Schema.md Additions
+
+The following three sections are intended to be pasted into `/r/meta/schema.md`. They establish the URL spaces of the protocol, the intent map foundation, and the predicate vocabulary.
+
+---
+
+## URL Spaces
+
+The protocol uses three top-level URL spaces. Every URL in the protocol resolves into exactly one of them, and each space has a different mode of existence.
+
+**`/r/`** — Reference. Prose declarations and documentation. The things you read. Component descriptions, channel definitions, key registries, policy descriptions, frame descriptions. Reference URLs are documents — they describe what something is, in human language, normatively.
+
+**`/s/`** — Systems. Live entries. The things being witnessed. Observatrons watching boundaries, spikes recording crossings. System URLs change as the protocol witnesses new boundary events; they are the protocol's running state.
+
+**`/e/`** — Executable. Canonical specifications written as runnable code. The things that run. Policies, predicates, and any other rule whose behavior must be precisely defined. Executable URLs identify the canonical implementation of a behavior — runnable, testable, the source of truth for what the rule does.
+
+A single conceptual thing — a policy, for instance — typically appears twice in URL space: once as a description in `/r/`, once as an executable specification in `/e/`. The two URLs share their tail path:
+
+```
+cgp:/r/intents/components/html/forms/textarea.md   ← prose declaration of the intent
+/intents/components/html/forms/textarea.json       ← the intent map (JSON)
+/handlers/components/html/forms/textarea.js        ← the handler code
+```
+An intent has three parallel artifacts sharing the same tail path. The `/r/` doc names the JSON and handler paths. See the Intent Map section below for the full shape. The `/e/` URL space is reserved for canonical mathematical specifications of behavior (see the `/e/` section at the end of this document); in alpha, handler code lives at filesystem paths named from the intent's `/r/` doc, not at `/e/` URLs.
+
+The choice of JavaScript for executable specifications in alpha is pragmatic — it matches the alpha runtime's language and is generated reliably by current tooling. This is not a long-term protocol commitment; future versions may introduce executable specifications in additional languages or in formal mathematical notation.
+
+---
+## Intent Map
+
+An intent map is an in-memory notepad shared by three parties — system, user, and organization — during a session. Each party writes into its own frame. The notepad lives in memory for the duration of the session; persistence, if any, is the concern of other modules.
+
+### The three frames
+
+- **`program-intent`** — the system's section. Engineering-defined behavior at the boundary.
+- **`user-intent`** — the user's section. User responses, user-set policies, user-declared intents during the session.
+- **`business-intent`** — the organization's section. Compliance, audit, policy concerns.
+
+Each frame can be updated in real time by its owner during the session. The frames coexist — a single boundary crossing may match triggers in any combination of frames.
+
+### The three decision gates
+
+Within each frame, triggers are grouped under three gates that name what the system must do:
+
+- **`halt`** — block the in-flight action.
+- **`ask`** — pause and request input from the user.
+- **`act`** — proceed and act on the data.
+
+Decision gates name *what to do*, not *how bad it is*. They replace severity-style vocabularies (`error`/`warning`/`info`).
+
+### Trigger shape
+
+Each gate holds an array of triggers. A trigger is a predicate-list paired with a handler payload:
+
+```json
+{
+  "predicates": [
+    { "type": "<predicate-name>", "...": "predicate-specific fields" }
+  ],
+  "handler": { "...": "handler payload" }
+}
+```
+
+The trigger fires when all predicates in the array return true (AND semantics). When the trigger fires, the handler payload is delivered verbatim to the component's handler code.
+
+Predicates are opaque to the runtime — any function returning a boolean. Examples: `event` (a named DOM event occurred), `regex` (input matches a pattern), `match` (input contains a string). New predicate types are added by creating new entries under `cgp:/r/predicates/`.
+
+### Intents: how intent maps are stored and referenced
+
+An intent is declared in three parallel filesystem trees, all keyed by the same tail path:
+
+| Tree | Purpose |
+|---|---|
+| `cgp:/r/intents/<path>.md` | Prose declaration of the intent. Names the JSON and JS paths below. |
+| `/intents/<path>.json` | The intent-map JSON (the notepad's initial seed). |
+| `/handlers/<path>.js` | The handler code that consumes the intent map and acts on it. |
+
+A reader who finds any one of the three files can derive the other two by substituting the prefix.
+
+### How an HTML element wires it up
+
+```html
+<div cgp-id="cgp:/r/components/html/forms/textarea.md"
+     cgp-system-id="0"
+     cgp-observatron-id="0"
+     cgp-target=".textarea"
+     cgp-intent="cgp:/r/intents/components/html/forms/textarea.md">
+  <textarea class="textarea"></textarea>
+</div>
+```
+
+The `cgp-intent` attribute holds a single URL — the intent's `/r/` declaration. The runtime fetches that doc, reads the JSON and JS paths it names, loads both, and wires the handler to the intent map.
+
+### Canonical intent map
+
+```json
+{
+  "program-intent": {
+    "halt": [],
+    "ask":  [],
+    "act":  [
+      {
+        "predicates": [
+          { "type": "event", "event": "keyup" }
+        ],
+        "handler": { "console-log": true }
+      }
+    ]
+  },
+  "user-intent":     { "halt": [], "ask": [], "act": [] },
+  "business-intent": { "halt": [], "ask": [], "act": [] }
+}
+```
+
+This is the textarea intent in canonical form: on keyup, console.log the value. One trigger, one predicate, one handler instruction. Every other intent is a richer instance of the same shape.
+
+### How a trigger is evaluated
+
+1. The runtime sees a boundary crossing on an observatron.
+2. The runtime walks each frame (`program-intent`, `user-intent`, `business-intent`), each gate (`halt`, `ask`, `act`), and each trigger within.
+3. For each trigger, the runtime evaluates every predicate in the `predicates` array.
+4. If all predicates return true, the trigger fires.
+5. The trigger's `handler` payload is delivered to the intent's handler code (the `.js` file named in the intent's `/r/` doc).
+6. What the handler does is the handler's responsibility — log, mint spikes, update DOM, whatever the intent declares. The runtime witnesses; the handler acts.
+
+### Channel
+
+When a trigger fires and the handler mints spikes, those spikes emit on a single uniform channel:
+
+`cgp:/r/events/intent-matched.md`
+
+The spike's `/context` records which frame, gate, and trigger produced it, so observers can trace the crossing back to the declared intent. Per-event channels like `csv-dropped` are no longer defined as protocol-level events; CSV-drop handling is now expressed as a trigger inside the drag-and-drop intent, and its spikes flow through `intent-matched`.
+---
+
+# External-facing Protocol Rules
+# Tree Footer (Markdown)
+
+When a CGP-conformant document is written in markdown — a blog post, an essay, a community update, a section of documentation — the document itself is the entry. Like an HTML element bearing a `cgp-id`, a markdown document declares its identity, taxonomy position, and intent through a small visible footer.
+
+The footer is human-readable. The same characters that draw the tree for a reader form a parseable structure for a machine. Visible signature and protocol annotation are the same artifact.
+
+## Shape
+
+A CGP markdown document MAY end with a tree footer. The footer is delimited by a horizontal rule and renders the document's position in the cognitive primitive taxonomy.
+
+```
+▾ cgp(<optional params to observatron>)
+        ▾ Context Graph Protocol
+                · URL Spaces
+                · Four Facet Model
+                · Intent Map
+                · Predicates
+                · Markdown Annotation
+                ▾ Formal Foundations
+                        ✓ Executable Specification Environment
+```
+
+### Glyph vocabulary
+
+| Glyph | U+ | Role |
+|---|---|---|
+| `▾` | U+25BE | Open folder. The branch is expanded; its children are listed beneath it. |
+| `▸` | U+25B8 | Closed folder. The branch is collapsed; its children are not shown. |
+| `·` | U+00B7 | Leaf, not selected. A terminal node that is not the document's location. |
+| `✓` | U+2713 | Leaf, selected. The "you are here" marker — the single node this document is about. |
+
+### Six states, four glyphs
+
+The vocabulary distinguishes six structural states using four glyphs. Two pairs of states share a glyph because the surrounding structure disambiguates them:
+
+| State | Glyph | Disambiguated by |
+|---|---|---|
+| Open folder with content | `▾` | Children are listed at the next indent level |
+| Open folder, empty | `▾` | No children appear at the next indent level |
+| Closed folder with content | `▸` | Reader knows it could be opened (snapshot does not declare) |
+| Closed folder, empty | `▸` | Same — closed is closed; content status is not part of the snapshot |
+| Leaf, not selected | `·` | Terminal node, not the document's location |
+| Leaf, selected | `✓` | Terminal node, the document's location (exactly one per tree) |
+
+This matches the convention of every standard tree-view UI (Finder, file explorers, IDE outlines): a caret-right means "closed," a caret-down means "open," and the structure beneath determines whether content exists.
+
+### Rules
+
+- Each tree MUST have exactly one `✓`. The `✓` is the document's location in the taxonomy.
+- Each level of the tree MUST have at most one `▾` (open folder being descended through). A document descends exactly one path; other siblings at that level appear as `▸` (closed folders) or `·` (leaves).
+- The path from the root `▾` to `✓` MUST be a contiguous chain of `▾`s terminating in `✓`.
+- Indentation marks depth. Use whitespace; exact width is a presentation choice.
+- The footer is OPTIONAL. A markdown document without a tree is still a markdown document; it is just not declaring a CGP location.
+
+### Examples of each state
+
+```
+▾ Folder 1 (open, has children)
+        ▸ Folder 2 (closed, has children — collapsed)
+        ▾ Folder 3 (open, has children)
+                · File 1 (leaf, not selected)
+                ✓ File 2 (leaf, selected — "you are here")
+                · File 3 (leaf, not selected)
+        ▸ Folder 4 (closed, empty)
+        ▾ Folder 5 (open, empty)
+        · File 4 (leaf at this level, not selected)
+```
+
+## Mapping to the Four Facet Model
+
+The footer is the document's `/context`, rendered for humans.
+
+| Tree element | Maps to |
+|---|---|
+| Root node | The cognitive primitive (root key in `cgp:/r/keys/`) |
+| Path of `▾`s | The namespace path under that key |
+| `✓` leaf | The `value` for this entry's `key` row in `/context` |
+| The document body | `/data` |
+
+A reader who scans the tree sees the document's namespace. A machine that parses the tree obtains the same information as a `/context` row.
+
+A future tool MAY hydrate the tree into a `/context` table by walking glyphs in order. This is not a runtime requirement; the tree is normative for humans and advisory for machines.
+
+## Growth Model
+
+A markdown document's tree is **frozen at write time**. It is a snapshot of the taxonomy as it existed at the moment of authoring.
+
+This is deliberate. The tree IS the provenance.
+
+- If the taxonomy grows after the document is written, the document does not update. Its tree continues to reflect the taxonomy of its era.
+- If a node is renamed, moved, or removed in the canonical taxonomy, the old document still names it as it was. The discrepancy is a historical record, not a defect.
+- Reading documents in chronological order, by tree, recovers the history of how the taxonomy evolved.
+
+This is provenance without a provenance system. There is no version field, no migration step, no audit log. The artifact carries its own history because the tree at the bottom of the document is the taxonomy at the time of writing.
+
+### Additive convention
+
+Taxonomy changes are additive. New nodes are added; existing nodes are not renamed or moved. When a node must change, the old path is preserved and a new path is introduced alongside it. This keeps historical trees machine-resolvable against the current taxonomy registry: every `✓` ever written still dereferences to a `cgp:/r/keys/<path>.md` file, even if newer documents no longer use that path.
+
+A document MAY include a comment naming the taxonomy version it was written against, but this is not required. The tree itself is sufficient.
+
+## Example
+
+A markdown post ending with a tree footer:
+
+````markdown
+# 79% of multi-agent failures had nothing to do with the model
+
+That's from the MAST study (Cemri et al.). Specification gaps.
+Inter-agent misalignment. Verification holes.
+
+Call it what it is: a stability problem.
+
+[...body of the post...]
+
+The moat is the harness, not the model.
+
+---
+
+▾ cgp(<optional params to observatron>)
+        ▾ Stability
+                · What it means
+                · Why it's required for coordination
+                ▾ Continuous cleaning pipeline
+                        ✓ Errors propagate and reinforce
+````
+
+A reader sees the argument and a footer locating it under *Stability → Continuous cleaning pipeline → Errors propagate and reinforce*. A machine sees the same. The tree is the contract.
+
+## Two Boundaries
+
+The Tree Footer convention applies to two distinct boundary classes, using the same primitives in both.
+
+**Inward boundary.** Specification documents cross from author to implementer. The Tree Footer on a spec section locates that section within the protocol's own taxonomy. Dark fraction at this boundary is the gap between what the spec means and what an implementer reads it to mean.
+
+**Outward boundary.** Public documents cross from author to discourse. The Tree Footer on a published document locates that document within the author's cognitive primitive taxonomy. Dark fraction at this boundary is the gap between what the author means and what the reader receives.
+
+Both boundaries are governed by the same four facets, the same URL spaces, and the same Tree Footer notation. The protocol does not distinguish them; they are the same shape applied to different surfaces.
+
+A protocol that requires different primitives for self-description than for external content is leaking a structural assumption. CGP does not. The Tree Footer applied to schema.md is the same convention as the Tree Footer applied to a public post — same glyphs, same rules, same mapping to the four facets. This is a conformance property, not a stylistic choice.
+
+## Propagation as `/context`
+
+A published document has more than one boundary crossing. The initial publication is the first; every subsequent share, quote, citation, or repost is another crossing on the same observatron.
+
+Each downstream crossing is a spike under the original document's observatron. The spike's `/context` records who interacted, when, on what channel, and (where available) what the downstream payload was. Over time, the observatron accumulates a log of how the document's meaning propagated.
+
+This reframes analytics. Conventional metrics (reach, impressions, engagement counts) measure volume. The `/context` log measures fidelity: at each downstream crossing, how much of the original meaning survived. A repost that preserves the claim is a coherent crossing; a repost that mutates the claim into something the author would not endorse is a dark-fraction event, observable as a discrepancy between upstream `/data` and downstream `/data`.
+
+Tooling that consumes a document's full `/context` log produces a propagation graph: the document at the root, every downstream interaction as a node, the meaning-preservation ratio as the edge weight. Conventional analytics produce a number. CGP analytics produce a graph with provenance.
+
+## Self-Reference
+
+The Tree Footer convention applies to schema.md itself. This document is a CGP entry; its footer locates it in the protocol's own taxonomy. The schema describes the annotation mechanism; the annotation conforms to the schema it describes.
+
+This is the conformance check that proves the protocol does not require special-casing for its own documentation. If schema.md required a different annotation mechanism than the documents it governs, the protocol would be leaking a structural assumption. It does not.
+
+The same Tree Footer convention, the same four-facet shape, and the same URL spaces govern the inward and outward boundaries with no modification. A retrieval system built over a corpus of CGP-annotated public documents and a retrieval system built over the spec's own sections are the same system pointed at different file trees.
+
+For example, the same tree footer below can be:
+- written at the bottom of a `.md` file in `/r/` for human readers
+- added to the `/context` facet as a row in a key-value pair in `/s/`
+- added to `/e/` for navigation by runtime tooling
+
+---
+
+▾ cgp(<optional params to observatron>)
+        ▾ Context Graph Protocol
+                · URL Spaces
+                · Four Facet Model
+                · Intent Map
+                · Predicates
+                · Markdown Annotation
+                ▾ Formal Foundations
+                        ✓ Executable Specification Environment
+
+
+----
+## `/e/` — Mathematical specifications
+
+The `/e/` URL space holds canonical mathematical specifications of protocol behavior. Math is the universal language; any implementation (JavaScript, Python, Rust) is a translation from the math.
+
+This is the same posture as a proof assistant. In Lean, Coq, or Agda, a theorem is a type and a proof is a program; any other proof of the same theorem is conformant if it inhabits the same type. The math is the source of truth, the runnable form is one expression of it. CGP applies the same posture at the protocol layer: the math in `/e/` is canonical, and any implementation is conformant if it produces equivalent outputs for equivalent inputs.
+
+Two practical consequences:
+
+- **Implementations are interchangeable.** A handler written in JavaScript and a handler written in Python that both compile from the same `/e/` expression are equally valid. The protocol cares about the math, not the language.
+- **Agents can derive code from math.** Given an `/e/` expression, an agent can generate an implementation in whatever language the runtime needs. The math is the brief; the code is one realization of that brief.
+
+The dark fraction δ — the protocol's headline metric — is itself defined in math. Writing it once, in Unicode, gives every implementation a single reference point to converge on.
+
+### Scope in alpha
+
+`/e/` is reserved space in alpha. Handlers are referenced by filesystem path from the policy's `/r/` doc, and the implementation language is whatever the runtime supports. The `/e/` infrastructure — a compiler from math to code, a conformance test harness, full mathematical notation for every protocol function — is a future project.
+
+What exists in alpha is one canonical example, planted to show the shape `/e/` will take.
+
+### Canonical example
+
+The textarea policy's handler — "on keyup, log the input" — expressed in pure math:
+
+```
+log : 𝕊 → ()
+log(x) = emit(x)
+```
+
+A function from strings (𝕊) to unit (()), whose effect is to emit its input. This specification is language-neutral. A future compilation produces `/handlers/components/html/forms/textarea.js`, or a Python equivalent, or any other implementation. Each implementation is a translation; the math is the source of truth.
+
+This is the entire `/e/` commitment for alpha: math is canonical, implementations are downstream, and one example exists to prove the concept holds.

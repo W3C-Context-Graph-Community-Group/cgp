@@ -19,21 +19,56 @@ The repo is laid out as a static tree of files. Every URL in the protocol resolv
 
 ```
 <repo-root>/
-└── r/                                  
-    ├── meta/
-    │   ├── schema.md
-    ├── schemas/
-    │   ├── observatron.schema.json
-    │   └── spike.schema.json
-    ├── keys/    
-    │   ├── task.md
-    │   └── component-type.md
-    ├── tasks/    
-    │   └── intent-matched.md
-    └── components/        
+├── r/
+│   ├── meta/
+│   │   └── schema.md
+│   ├── schemas/
+│   │   ├── observatron.schema.json
+│   │   └── spike.schema.json
+│   ├── keys/
+│   │   ├── task.md
+│   │   ├── component-type.md
+│   │   ├── frame.md
+│   │   ├── gate.md
+│   │   └── trigger.md
+│   ├── frames/
+│   │   ├── program-intent.md
+│   │   ├── user-intent.md
+│   │   └── business-intent.md
+│   ├── gates/
+│   │   ├── halt.md
+│   │   ├── ask.md
+│   │   └── act.md
+│   ├── triggers/
+│   │   └── console-log-on-keyup.md
+│   ├── tasks/
+│   │   └── intent-matched.md
+│   ├── events/
+│   │   ├── activated.md
+│   │   └── intent-matched.md
+│   ├── components/
+│   │   └── html/
+│   │       └── forms/
+│   │           ├── textarea.md
+│   │           └── drag-and-drop.md
+│   └── intents/
+│       └── components/
+│           └── html/
+│               └── forms/
+│                   ├── textarea.md
+│                   └── drag-and-drop.md
+├── intents/
+│   └── components/
+│       └── html/
+│           └── forms/
+│               ├── textarea.json
+│               └── drag-and-drop.json
+└── handlers/
+    └── components/
         └── html/
             └── forms/
-                └── drag-and-drop.md
+                ├── textarea.js
+                └── drag-and-drop.js
 ```
 
 Sub-directories under a catalog are fine wherever the structure helps a human navigate (e.g., `components/html/forms/drag-and-drop.md`). The protocol does not care about category structure; URLs just resolve to file paths.
@@ -324,9 +359,9 @@ Alpha defines exactly two events.
 | Event URL | Fired when |
 |---|---|
 | `cgp:/r/events/activated.md` | An observatron is instantiated. Announces the observatron exists. |
-| `cgp:/r/events/csv-dropped.md` | A CSV file is dropped on the watched boundary. Mints one spike per column. |
+| `cgp:/r/events/intent-matched.md` | A trigger in the observatron's intent map fired. Mints one spike per matched trigger, carrying the trigger's handler payload in `/data`. |
 
-No other events exist in alpha. The drag-and-drop scenario produces only these two kinds of `/context` row at minting time.
+These are the two protocol-level event channels in alpha. All intent-driven spikes flow through `intent-matched`; the spike's `/context` rows record which frame, gate, and trigger produced it.
 
 
 ---
@@ -410,13 +445,13 @@ An observatron minted when an HTML element instantiates it. The instantiation pa
     "value": {
       "cgp-system-id": "0",
       "cgp-observatron-id": "0",
-      "cgp-target": ".drop-zone",
-      "cgp-intent": "{\"cgp-policy\":\"cgp:/r/policies/parse-csv-headers.md\"}"
+      "cgp-target": ".textarea",
+      "cgp-intent": "cgp:/r/intents/components/html/forms/textarea.md"
     }
   },
   "/meaning": {
-    "key": ["watches CSV columns"],
-    "value": ["Observes drag-and-drop CSV files and emits one spike per column."]
+    "key": ["watches textarea input"],
+    "value": ["Observes a textarea element and mints spikes when triggers in its intent map fire."]
   },
   "/structure": {
     "key": [],
@@ -438,14 +473,16 @@ An observatron minted when an HTML element instantiates it. The instantiation pa
       "cgp:/r/keys/component-type.md"
     ],
     "value": [
-      "cgp:/r/tasks/csv-dropped.md",
-      "cgp:/r/components/html/forms/drag-and-drop.md"
+      "cgp:/r/tasks/activated.md",
+      "cgp:/r/components/html/forms/textarea.md"
     ]
   }
 }
 ```
 
-The observatron exists because instantiation parameters crossed the boundary. `/data` carries those parameters verbatim — every key prefixed with `cgp-`, every value as a raw string. `/meaning` describes what the observatron does in human terms. `/structure` is empty because no schema for instantiation parameters has been declared. `/context` records the activation event under the `csv-dropped` task and the `html/forms/drag-and-drop` component-type. Note that `anchor` and `source` are equal — the observatron is writing about itself.
+The observatron exists because instantiation parameters crossed the boundary. `/data` carries those parameters verbatim — every key prefixed with `cgp-`, every value as a raw string. The `cgp-intent` value is a URL pointing at the intent's `/r/` declaration; the runtime fetches that doc to load the JSON intent map and handler. `/meaning` describes what the observatron does in human terms. `/structure` is empty because no schema for instantiation parameters has been declared. `/context` records the activation event under the activated task and the textarea component-type. Note that anchor and source are equal — the observatron is writing about itself.
+
+(Note: this assumes you'll create a `/r/tasks/activated.md` file. If you'd rather just reuse `cgp:/r/tasks/intent-matched.md` or leave the task ambiguous, your call. activated is the cleaner name for the observatron-minting task.)
 
 ---
 
@@ -456,11 +493,12 @@ The observatron exists because instantiation parameters crossed the boundary. `/
 The host page declares the observatron:
 
 ```html
-<div cgp-id="cgp:/r/components/html/forms/drag-and-drop.md"
+<div cgp-id="cgp:/r/components/html/forms/textarea.md"
      cgp-system-id="0"
      cgp-observatron-id="0"
-     cgp-target=".drop-zone"
-     cgp-intent="{...}">
+     cgp-target=".textarea"
+     cgp-intent="cgp:/r/intents/components/html/forms/textarea.md">
+  <textarea class="textarea"></textarea>
 </div>
 ```
 
@@ -470,17 +508,17 @@ The attribute set crosses the boundary verbatim and becomes the observatron's `/
 {
   "/data": {
     "value": {
-      "cgp-id": "cgp:/r/components/html/forms/drag-and-drop.md",
+      "cgp-id": "cgp:/r/components/html/forms/textarea.md",
       "cgp-system-id": "0",
       "cgp-observatron-id": "0",
-      "cgp-target": ".drop-zone",
-      "cgp-intent": "{...}"
+      "cgp-target": ".textarea",
+      "cgp-intent": "cgp:/r/intents/components/html/forms/textarea.md"
     }
   }
 }
 ```
 
-The `cgp-intent` value is the literal HTML attribute string, not a parsed object.
+The `cgp-intent` value is a URL string, recorded verbatim. The runtime fetches that URL to resolve the intent's JSON map and handler.
 
 ### The `cgp-id` Stamping Model
 
@@ -595,22 +633,15 @@ external agent declares it — by writing to /meaning explicitly,
 or by an intent map's handler producing it as a spike's payload.
 The runtime is a witness, not an interpreter.
 
-### Spike granularity is a policy decision, not a protocol law.
-
-How a payload becomes spikes is declared in the cgp-intent map. One
+### Spike granularity is an intent decision, not a protocol law.
+How a payload becomes spikes is declared in the intent map. One
 boundary crossing can mint one spike (the whole payload), N spikes
-(one per part the policy carved out), or zero spikes (no policy
+(one per part the intent carved out), or zero spikes (no trigger
 matched).
-
-When no intent is declared, the runtime applies a default policy.
-The default is a choice the implementer makes — not a protocol
-truth. Documenting the default is required; treating the default as
-"how the protocol works" is wrong. The protocol works however the
-policy says.
-
-For the alpha drag-and-drop component, the default policy carves
-one spike per column. This is documented in cgp:/r/policies/parse-csv-headers.md
-and is overridable by an intent map declaring a different policy.
+When no intent is declared, the runtime mints no spikes. Spikes
+exist only because a trigger in the intent map fired and named the
+handler payload they should carry. The protocol works however the
+declared intent says — there is no implicit default behavior.
 
 ### Don't promote data to meaning.
 
@@ -648,11 +679,11 @@ The protocol uses three top-level URL spaces. Every URL in the protocol resolves
 A single conceptual thing — a policy, for instance — typically appears twice in URL space: once as a description in `/r/`, once as an executable specification in `/e/`. The two URLs share their tail path:
 
 ```
-cgp:/r/policies/parse-csv-headers.md      ← prose declaration
-cgp:/e/policies/parse-csv-headers.js      ← canonical executable specification
+cgp:/r/intents/components/html/forms/textarea.md   ← prose declaration of the intent
+/intents/components/html/forms/textarea.json       ← the intent map (JSON)
+/handlers/components/html/forms/textarea.js        ← the handler code
 ```
-
-The description explains what the policy is and why. The executable spec is what runs. Together they form the complete protocol contract for that policy: anyone implementing it in another language can read the description for context and the spec for behavior, and verify their implementation against the spec's outputs.
+An intent has three parallel artifacts sharing the same tail path. The `/r/` doc names the JSON and handler paths. See the Intent Map section below for the full shape. The `/e/` URL space is reserved for canonical mathematical specifications of behavior (see the `/e/` section at the end of this document); in alpha, handler code lives at filesystem paths named from the intent's `/r/` doc, not at `/e/` URLs.
 
 The choice of JavaScript for executable specifications in alpha is pragmatic — it matches the alpha runtime's language and is generated reliably by current tooling. This is not a long-term protocol commitment; future versions may introduce executable specifications in additional languages or in formal mathematical notation.
 

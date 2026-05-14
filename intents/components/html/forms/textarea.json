@@ -1,0 +1,16 @@
+{
+  "program-intent": {
+    "halt": [],
+    "ask":  [],
+    "act":  [
+      {
+        "predicates": [
+          { "type": "event", "event": "keyup" }
+        ],
+        "handler": { "console-log": true }
+      }
+    ]
+  },
+  "user-intent":     { "halt": [], "ask": [], "act": [] },
+  "business-intent": { "halt": [], "ask": [], "act": [] }
+}
